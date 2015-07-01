@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Hare.Geometry;
 
 namespace Pachyderm_Acoustic
 {
@@ -34,7 +35,7 @@ namespace Pachyderm_Acoustic
             /// <param name="Direct_Data">Array of Completed Direct Sound Simulations Required</param>
             /// <param name="IS_Data">Array of Completed Image Source Simulations. Enter null if opted out.</param>
             /// <param name="Receiver">Array of Completed Ray-Tracing Simulation Receivers. Enter null if opted out.</param>
-            public static void Write_Pac1(Direct_Sound[] Direct_Data, ImageSourceData[] IS_Data = null, Environment.Receiver_Bank[] Receiver = null)
+            public static void Write_Pac1(Point[] SRC, Direct_Sound[] Direct_Data, ImageSourceData[] IS_Data = null, Environment.Receiver_Bank[] Receiver = null)
             {
                 System.Windows.Forms.SaveFileDialog sf = new System.Windows.Forms.SaveFileDialog();
                 sf.DefaultExt = ".pac1";
@@ -43,7 +44,7 @@ namespace Pachyderm_Acoustic
 
                 if (sf.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    Write_Pac1(sf.FileName, Direct_Data, IS_Data, Receiver);
+                    Write_Pac1(sf.FileName, SRC, Direct_Data, IS_Data, Receiver);
                 }
             }
 
@@ -54,7 +55,7 @@ namespace Pachyderm_Acoustic
             /// <param name="Direct_Data">Array of Completed Direct Sound Simulations Required</param>
             /// <param name="IS_Data">Array of Completed Image Source Simulations. Enter null if opted out.</param>
             /// <param name="Receiver">Array of Completed Ray-Tracing Simulation Receivers. Enter null if opted out.</param>
-            public static void Write_Pac1(string filename, Direct_Sound[] Direct_Data, ImageSourceData[] IS_Data = null, Environment.Receiver_Bank[] Receiver = null)
+            public static void Write_Pac1(string filename, Point[] SRC, Direct_Sound[] Direct_Data, ImageSourceData[] IS_Data = null, Environment.Receiver_Bank[] Receiver = null)
             {
                 if (Direct_Data == null && IS_Data == null && IS_Data == null && Receiver != null)
                 {
@@ -62,28 +63,28 @@ namespace Pachyderm_Acoustic
                     return;
                 }
 
-                Pachyderm_Acoustic.UI.PachydermAc_PlugIn plugin = Pachyderm_Acoustic.UI.PachydermAc_PlugIn.Instance;
+                //Pachyderm_Acoustic.UI.PachydermAc_PlugIn plugin = Pachyderm_Acoustic.UI.PachydermAc_PlugIn.Instance;
 
                 System.IO.BinaryWriter sw = new System.IO.BinaryWriter(System.IO.File.Open(filename, System.IO.FileMode.Create));
                 //1. Date & Time
                 sw.Write(System.DateTime.Now.ToString());
                 //2. Plugin Version... if less than 1.1, assume only 1 source.
-                sw.Write(plugin.Version);
+                sw.Write("2.0.0.1");
                 //3. Cut off Time (seconds) and SampleRate
                 sw.Write((double)Receiver[0].CO_Time);//CO_TIME.Value);
                 sw.Write(Receiver[0].SampleRate);
                 //4.0 Source Count(int)
-                Rhino.Geometry.Point3d[] SRC;
-                plugin.SourceOrigin(out SRC);
+                //Point[] SRC;
+                //plugin.SourceOrigin(out SRC);
                 sw.Write(SRC.Length);
                 for (int i = 0; i < SRC.Length; i++)
                 {
                     //4.1 Source Location x (double)    
-                    sw.Write(SRC[i].X);
+                    sw.Write(SRC[i].x);
                     //4.2 Source Location y (double)
-                    sw.Write(SRC[i].Y);
+                    sw.Write(SRC[i].y);
                     //4.3 Source Location z (double)
-                    sw.Write(SRC[i].Z);
+                    sw.Write(SRC[i].z);
                 }
                 //5. No of Receivers
                 sw.Write(Receiver[0].Rec_List.Length);
@@ -217,329 +218,329 @@ namespace Pachyderm_Acoustic
                 }
             }
             
-            /// <summary>
-            /// Writes the map receiver to a file. 
-            /// </summary>
-            /// <param name="Rec_List">The list of receivers to be written.</param>
-            public static void Write_pachm(Mapping.PachMapReceiver[] Rec_List)
-            {
-                System.Windows.Forms.SaveFileDialog sf = new System.Windows.Forms.SaveFileDialog();
-                sf.DefaultExt = ".pachm";
-                sf.AddExtension = true;
-                sf.Filter = "Pachyderm Mapping Data File (*.pachm)|*.pachm|" + "All Files|";
-                if (sf.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    Write_pachm(sf.FileName, Rec_List);
-                }
-            }
+            ///// <summary>
+            ///// Writes the map receiver to a file. 
+            ///// </summary>
+            ///// <param name="Rec_List">The list of receivers to be written.</param>
+            //public static void Write_pachm(Mapping.PachMapReceiver[] Rec_List)
+            //{
+            //    System.Windows.Forms.SaveFileDialog sf = new System.Windows.Forms.SaveFileDialog();
+            //    sf.DefaultExt = ".pachm";
+            //    sf.AddExtension = true;
+            //    sf.Filter = "Pachyderm Mapping Data File (*.pachm)|*.pachm|" + "All Files|";
+            //    if (sf.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            //    {
+            //        Write_pachm(sf.FileName, Rec_List);
+            //    }
+            //}
 
-            /// <summary>
-            /// Writes pachyderm mapping file.
-            /// </summary>
-            /// <param name="filename">The location the new file is to be written to.</param>
-            /// <param name="Rec_List">The list of receivers to be written.</param>
-            public static void Write_pachm(string filename, Mapping.PachMapReceiver[] Rec_List)
-            {
-                System.IO.BinaryWriter sw = new System.IO.BinaryWriter(System.IO.File.Open(filename, System.IO.FileMode.Create));
-                //1. Write calculation type. (string)  
-                sw.Write(Rec_List[0].Data_Type());
-                Boolean Directional = Rec_List[0].Data_Type() == "Type;Map_Data";
-                //2. Write the number of samples in each histogram. (int)
-                sw.Write((UInt32)Rec_List[0].SampleCT);
-                //3. Write the sample rate. (int) 
-                sw.Write((UInt32)Rec_List[0].SampleRate);
-                //4. Write the number of Receivers (int)
-                int Rec_Ct = Rec_List[0].Rec_List.Length;
-                sw.Write((UInt32)Rec_Ct);
-                //4.5 Announce the Version
-                sw.Write("Version");
-                sw.Write(UI.PachydermAc_PlugIn.Instance.Version);
-                //5. Announce that the following data pertains to the form of the analysis mesh. (string)
-                sw.Write("Mesh Information");
-                //6. Announce Mesh Vertices (string)
-                sw.Write("Mesh Vertices");
-                //Write the number of vertices & faces (int) (int)
-                sw.Write((UInt32)Rec_List[0].Map_Mesh.Vertices.Count);
-                sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces.Count);
+            ///// <summary>
+            ///// Writes pachyderm mapping file.
+            ///// </summary>
+            ///// <param name="filename">The location the new file is to be written to.</param>
+            ///// <param name="Rec_List">The list of receivers to be written.</param>
+            //public static void Write_pachm(string filename, Mapping.PachMapReceiver[] Rec_List)
+            //{
+            //    System.IO.BinaryWriter sw = new System.IO.BinaryWriter(System.IO.File.Open(filename, System.IO.FileMode.Create));
+            //    //1. Write calculation type. (string)  
+            //    sw.Write(Rec_List[0].Data_Type());
+            //    Boolean Directional = Rec_List[0].Data_Type() == "Type;Map_Data";
+            //    //2. Write the number of samples in each histogram. (int)
+            //    sw.Write((UInt32)Rec_List[0].SampleCT);
+            //    //3. Write the sample rate. (int) 
+            //    sw.Write((UInt32)Rec_List[0].SampleRate);
+            //    //4. Write the number of Receivers (int)
+            //    int Rec_Ct = Rec_List[0].Rec_List.Length;
+            //    sw.Write((UInt32)Rec_Ct);
+            //    //4.5 Announce the Version
+            //    sw.Write("Version");
+            //    sw.Write(UI.PachydermAc_PlugIn.Instance.Version);
+            //    //5. Announce that the following data pertains to the form of the analysis mesh. (string)
+            //    sw.Write("Mesh Information");
+            //    //6. Announce Mesh Vertices (string)
+            //    sw.Write("Mesh Vertices");
+            //    //Write the number of vertices & faces (int) (int)
+            //    sw.Write((UInt32)Rec_List[0].Map_Mesh.Vertices.Count);
+            //    sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces.Count);
 
-                for (int i = 0; i < Rec_List[0].Map_Mesh.Vertices.Count; i++)
-                {
-                    //Write Vertex: (double) (double) (double)
-                    sw.Write(Rec_List[0].Map_Mesh.Vertices[i].X);
-                    sw.Write(Rec_List[0].Map_Mesh.Vertices[i].Y);
-                    sw.Write(Rec_List[0].Map_Mesh.Vertices[i].Z);    
-                }
-                //7. Announce Mesh Faces (string)
-                sw.Write("Mesh Faces");
-                for (int i = 0; i < Rec_List[0].Map_Mesh.Faces.Count; i++)
-                {
-                    // Write mesh vertex indices: (int) (int) (int) (int)
-                    sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][0]);
-                    sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][1]);
-                    sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][2]);
-                    sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][3]);
-                }
-                //7.5: Announce the number of sources.
-                //sw.Write("Sources");
-                sw.Write("SourceswLoc");
-                sw.Write(Rec_List.Length);
-                //7.5a: Announce the Type of Source
-                for (int i = 0; i < Rec_List.Length; i++)
-                {
-                    ///////////////////////
-                    sw.Write(Rec_List[i].Src.X);
-                    sw.Write(Rec_List[i].Src.Y);
-                    sw.Write(Rec_List[i].Src.Z);
-                    ///////////////////////
-                    sw.Write(Rec_List[i].SrcType);
-                    sw.Write(Rec_List[i].delay_ms);//v.2.0.0.1
-                }
+            //    for (int i = 0; i < Rec_List[0].Map_Mesh.Vertices.Count; i++)
+            //    {
+            //        //Write Vertex: (double) (double) (double)
+            //        sw.Write(Rec_List[0].Map_Mesh.Vertices[i].x);
+            //        sw.Write(Rec_List[0].Map_Mesh.Vertices[i].y);
+            //        sw.Write(Rec_List[0].Map_Mesh.Vertices[i].z);    
+            //    }
+            //    //7. Announce Mesh Faces (string)
+            //    sw.Write("Mesh Faces");
+            //    for (int i = 0; i < Rec_List[0].Map_Mesh.Faces.Count; i++)
+            //    {
+            //        // Write mesh vertex indices: (int) (int) (int) (int)
+            //        sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][0]);
+            //        sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][1]);
+            //        sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][2]);
+            //        sw.Write((UInt32)Rec_List[0].Map_Mesh.Faces[i][3]);
+            //    }
+            //    //7.5: Announce the number of sources.
+            //    //sw.Write("Sources");
+            //    sw.Write("SourceswLoc");
+            //    sw.Write(Rec_List.Length);
+            //    //7.5a: Announce the Type of Source
+            //    for (int i = 0; i < Rec_List.Length; i++)
+            //    {
+            //        ///////////////////////
+            //        sw.Write(Rec_List[i].Src.x);
+            //        sw.Write(Rec_List[i].Src.y);
+            //        sw.Write(Rec_List[i].Src.z);
+            //        ///////////////////////
+            //        sw.Write(Rec_List[i].SrcType);
+            //        sw.Write(Rec_List[i].delay_ms);//v.2.0.0.1
+            //    }
 
-                //8. Announce that the following data pertains to the receiver histograms (string)
-                sw.Write("Receiver Hit Data");
-                //8a. Announce whether or not data is linked to vertices rather than faces (bool)
-                sw.Write(Rec_List[0].Rec_Vertex);
+            //    //8. Announce that the following data pertains to the receiver histograms (string)
+            //    sw.Write("Receiver Hit Data");
+            //    //8a. Announce whether or not data is linked to vertices rather than faces (bool)
+            //    sw.Write(Rec_List[0].Rec_Vertex);
 
-                for (int s = 0; s < Rec_List.Length; s++)
-                {
-                    for (int i = 0; i < Rec_Ct; i++)
-                    {
-                        //Write Receiver Index (int)
-                        sw.Write((UInt32)i);
-                        //Write the direct sound arrival time.
-                        sw.Write((Rec_List[s].Rec_List[i] as Mapping.PachMapReceiver.Map_Receiver).Direct_Time);
-                        //Write Impedance of Air
-                        sw.Write(Rec_List[0].Rec_List[i].Rho_C);
+            //    for (int s = 0; s < Rec_List.Length; s++)
+            //    {
+            //        for (int i = 0; i < Rec_Ct; i++)
+            //        {
+            //            //Write Receiver Index (int)
+            //            sw.Write((UInt32)i);
+            //            //Write the direct sound arrival time.
+            //            sw.Write((Rec_List[s].Rec_List[i] as Mapping.PachMapReceiver.Map_Receiver).Direct_Time);
+            //            //Write Impedance of Air
+            //            sw.Write(Rec_List[0].Rec_List[i].Rho_C);
 
-                        for (int Octave = 0; Octave < 8; Octave++)
-                        {
-                            //Write Octave (int)
-                            sw.Write((UInt32)Octave);
-                            double[] Hist = Rec_List[s].Rec_List[i].GetEnergyHistogram(Octave);
-                            for (int e = 0; e < Rec_List[s].SampleCT; e++)
-                            {
-                                //Write each energy value in the histogram (double)...
-                                sw.Write(Hist[e]);
-                                //Write each directional value in the histogram (double) (double) (double);
-                                if (Directional)
-                                {
-                                    Hare.Geometry.Vector DirPos = Rec_List[s].Directions_Pos(Octave, e, i);
-                                    Hare.Geometry.Vector DirNeg = Rec_List[s].Directions_Neg(Octave, e, i);
-                                    sw.Write(DirPos.x);
-                                    sw.Write(DirPos.y);
-                                    sw.Write(DirPos.z);
-                                    sw.Write(DirNeg.x);
-                                    sw.Write(DirNeg.y);
-                                    sw.Write(DirNeg.z);
-                                }
-                            }
-                        }
-                        sw.Write("End_Receiver_Hits");
-                    }
-                }
-                sw.Write("End_of_File");
-                sw.Close();
-            }
+            //            for (int Octave = 0; Octave < 8; Octave++)
+            //            {
+            //                //Write Octave (int)
+            //                sw.Write((UInt32)Octave);
+            //                double[] Hist = Rec_List[s].Rec_List[i].GetEnergyHistogram(Octave);
+            //                for (int e = 0; e < Rec_List[s].SampleCT; e++)
+            //                {
+            //                    //Write each energy value in the histogram (double)...
+            //                    sw.Write(Hist[e]);
+            //                    //Write each directional value in the histogram (double) (double) (double);
+            //                    if (Directional)
+            //                    {
+            //                        Hare.Geometry.Vector DirPos = Rec_List[s].Directions_Pos(Octave, e, i);
+            //                        Hare.Geometry.Vector DirNeg = Rec_List[s].Directions_Neg(Octave, e, i);
+            //                        sw.Write(DirPos.x);
+            //                        sw.Write(DirPos.y);
+            //                        sw.Write(DirPos.z);
+            //                        sw.Write(DirNeg.x);
+            //                        sw.Write(DirNeg.y);
+            //                        sw.Write(DirNeg.z);
+            //                    }
+            //                }
+            //            }
+            //            sw.Write("End_Receiver_Hits");
+            //        }
+            //    }
+            //    sw.Write("End_of_File");
+            //    sw.Close();
+            //}
 
-            /// <summary>
-            /// reads a file and populates the map receiver instance.
-            /// </summary>
-            /// <returns></returns>
-            public static bool Read_pachm(out Mapping.PachMapReceiver[] Map)
-            {
-                System.Windows.Forms.OpenFileDialog of = new System.Windows.Forms.OpenFileDialog();
-                of.DefaultExt = ".pachm";
-                of.AddExtension = true;
-                of.Filter = "Pachyderm Mapping Data File (*.pachm)|*.pachm|" + "All Files|";
-                if (of.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-                {
-                    Map = null;
-                    return false;
-                }
-                System.IO.BinaryReader sr = new System.IO.BinaryReader(System.IO.File.Open(of.FileName, System.IO.FileMode.Open));
-                //1. Write calculation type. (string)
-                string CalcType = sr.ReadString();
-                if (CalcType != "Type;Map_Data" && CalcType != "Type;Map_Data_NoDir") throw new Exception("Map Data File Expected");
-                bool Directional = (CalcType == "Type;Map_Data");
+            ///// <summary>
+            ///// reads a file and populates the map receiver instance.
+            ///// </summary>
+            ///// <returns></returns>
+            //public static bool Read_pachm(out Mapping.PachMapReceiver[] Map)
+            //{
+            //    System.Windows.Forms.OpenFileDialog of = new System.Windows.Forms.OpenFileDialog();
+            //    of.DefaultExt = ".pachm";
+            //    of.AddExtension = true;
+            //    of.Filter = "Pachyderm Mapping Data File (*.pachm)|*.pachm|" + "All Files|";
+            //    if (of.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+            //    {
+            //        Map = null;
+            //        return false;
+            //    }
+            //    System.IO.BinaryReader sr = new System.IO.BinaryReader(System.IO.File.Open(of.FileName, System.IO.FileMode.Open));
+            //    //1. Write calculation type. (string)
+            //    string CalcType = sr.ReadString();
+            //    if (CalcType != "Type;Map_Data" && CalcType != "Type;Map_Data_NoDir") throw new Exception("Map Data File Expected");
+            //    bool Directional = (CalcType == "Type;Map_Data");
 
-                //2. Write the number of samples in each histogram. (int)
-                int SampleCT = (int)sr.ReadUInt32();
-                //3. Write the sample rate. (int) 
-                int SampleRate = (int)sr.ReadUInt32();
-                //4. Write the number of Receivers (int)
-                int Rec_CT = (int)sr.ReadUInt32();
-                //4.5 Write the version number
-                double version = 1.1;
-                double rev = 0;
-                //5. Announce that the following data pertains to the form of the analysis mesh. (string)
-                int s_ct = 1;
-                Rhino.Geometry.Mesh Map_Mesh = new Rhino.Geometry.Mesh();
-                Map = new Mapping.PachMapReceiver[1];
-                //Map[0] = new Pach_Map_Receiver();        
-                //double[] Rho_C = null;
-                double[] delay = new double[s_ct];
+            //    //2. Write the number of samples in each histogram. (int)
+            //    int SampleCT = (int)sr.ReadUInt32();
+            //    //3. Write the sample rate. (int) 
+            //    int SampleRate = (int)sr.ReadUInt32();
+            //    //4. Write the number of Receivers (int)
+            //    int Rec_CT = (int)sr.ReadUInt32();
+            //    //4.5 Write the version number
+            //    double version = 1.1;
+            //    double rev = 0;
+            //    //5. Announce that the following data pertains to the form of the analysis mesh. (string)
+            //    int s_ct = 1;
+            //    Mesh Map_Mesh = new Mesh();
+            //    Map = new Mapping.PachMapReceiver[1];
+            //    //Map[0] = new Pach_Map_Receiver();        
+            //    //double[] Rho_C = null;
+            //    double[] delay = new double[s_ct];
 
-                do
-                {
-                    switch (sr.ReadString())
-                    {
-                        case "Version":
-                            //Pach1.7 = Versioning functionality added.
-                            string v = sr.ReadString();
-                            version = double.Parse(v.Substring(0, 3));
-                            rev = int.Parse(v.Split(new char[1] { '.' })[3]);
-                            break;
-                        case "Mesh Information":
-                            //6. Announce Mesh Vertices (string)
-                            //Write the number of vertices & faces (int) (int)
-                            if (sr.ReadString() != "Mesh Vertices") throw new Exception("Mesh Vertices Expected");
+            //    do
+            //    {
+            //        switch (sr.ReadString())
+            //        {
+            //            case "Version":
+            //                //Pach1.7 = Versioning functionality added.
+            //                string v = sr.ReadString();
+            //                version = double.Parse(v.Substring(0, 3));
+            //                rev = int.Parse(v.Split(new char[1] { '.' })[3]);
+            //                break;
+            //            case "Mesh Information":
+            //                //6. Announce Mesh Vertices (string)
+            //                //Write the number of vertices & faces (int) (int)
+            //                if (sr.ReadString() != "Mesh Vertices") throw new Exception("Mesh Vertices Expected");
 
-                            int VC = (int)sr.ReadUInt32();
-                            int FC = (int)sr.ReadUInt32();
-                            for (int i = 0; i < VC; i++)
-                            {
-                                //Write Vertex: (double) (double) (double)
-                                Map_Mesh.Vertices.Add(new Rhino.Geometry.Point3d(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()));
-                            }
+            //                int VC = (int)sr.ReadUInt32();
+            //                int FC = (int)sr.ReadUInt32();
+            //                for (int i = 0; i < VC; i++)
+            //                {
+            //                    //Write Vertex: (double) (double) (double)
+            //                    Map_Mesh.Vertices.Add(new Point(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()));
+            //                }
 
-                            //7. Announce Mesh Faces (string)
-                            if (sr.ReadString() != "Mesh Faces") throw new Exception("Mesh Faces Expected");
+            //                //7. Announce Mesh Faces (string)
+            //                if (sr.ReadString() != "Mesh Faces") throw new Exception("Mesh Faces Expected");
 
-                            for (int i = 0; i < FC; i++)
-                            {
-                                // Write mesh vertex indices: (int) (int) (int) (int)
-                                Map_Mesh.Faces.AddFace((int)sr.ReadUInt32(), (int)sr.ReadUInt32(), (int)sr.ReadUInt32(), (int)sr.ReadUInt32());
-                            }
-                            break;
-                        case "Sources":
-                            //7.5: Announce the number of sources.
-                            s_ct = sr.ReadInt32();
-                            Map = new Mapping.PachMapReceiver[s_ct];
-                            //7.5a Announce the type of source.
+            //                for (int i = 0; i < FC; i++)
+            //                {
+            //                    // Write mesh vertex indices: (int) (int) (int) (int)
+            //                    Map_Mesh.Faces.AddFace((int)sr.ReadUInt32(), (int)sr.ReadUInt32(), (int)sr.ReadUInt32(), (int)sr.ReadUInt32());
+            //                }
+            //                break;
+            //            case "Sources":
+            //                //7.5: Announce the number of sources.
+            //                s_ct = sr.ReadInt32();
+            //                Map = new Mapping.PachMapReceiver[s_ct];
+            //                //7.5a Announce the type of source.
 
-                            for (int s = 0; s < s_ct; s++)
-                            {
-                                Map[s] = new Mapping.PachMapReceiver();
-                                Map[s].CutOffTime = (double)SampleCT / (double)SampleRate;
-                                Map[s].SampleCT = SampleCT;
-                                Map[s].SampleRate = SampleRate;
-                                Map[s].Map_Mesh = Map_Mesh;
-                                Map[s].Rec_List = new Mapping.PachMapReceiver.Map_Receiver[Rec_CT];
-                                Map[s].SrcType = sr.ReadString();
-                                //4.4 Source delay (ms)
-                                if (version > 2.0 || (version == 2.0 && rev >= 1))
-                                {
-                                    delay[s] = sr.ReadDouble();
-                                }
-                            }
-                            break;
-                        case "SourceswLoc":
-                            //7.5: Announce the number of sources.
-                            s_ct = sr.ReadInt32();
-                            Map = new Mapping.PachMapReceiver[s_ct];
-                            //7.5a Announce the type of source.
+            //                for (int s = 0; s < s_ct; s++)
+            //                {
+            //                    Map[s] = new Mapping.PachMapReceiver();
+            //                    Map[s].CutOffTime = (double)SampleCT / (double)SampleRate;
+            //                    Map[s].SampleCT = SampleCT;
+            //                    Map[s].SampleRate = SampleRate;
+            //                    Map[s].Map_Mesh = Map_Mesh;
+            //                    Map[s].Rec_List = new Mapping.PachMapReceiver.Map_Receiver[Rec_CT];
+            //                    Map[s].SrcType = sr.ReadString();
+            //                    //4.4 Source delay (ms)
+            //                    if (version > 2.0 || (version == 2.0 && rev >= 1))
+            //                    {
+            //                        delay[s] = sr.ReadDouble();
+            //                    }
+            //                }
+            //                break;
+            //            case "SourceswLoc":
+            //                //7.5: Announce the number of sources.
+            //                s_ct = sr.ReadInt32();
+            //                Map = new Mapping.PachMapReceiver[s_ct];
+            //                //7.5a Announce the type of source.
 
-                            for (int s = 0; s < s_ct; s++)
-                            {
-                                Map[s] = new Mapping.PachMapReceiver();
-                                Map[s].CutOffTime = (double)SampleCT / (double)SampleRate * 1000;
-                                Map[s].SampleCT = SampleCT;
-                                Map[s].SampleRate = SampleRate;
-                                Map[s].Map_Mesh = Map_Mesh;
-                                Map[s].Rec_List = new Mapping.PachMapReceiver.Map_Receiver[Rec_CT];
-                                Map[s].Src = new Rhino.Geometry.Point3d(sr.ReadDouble(), sr.ReadDouble(), sr.ReadDouble());
-                                Map[s].SrcType = sr.ReadString();
-                                //4.4 Source delay (ms)
-                                if (version > 2.0 || (version == 2.0 && rev >= 1))
-                                {
-                                    delay[s] = sr.ReadDouble();
-                                }
-                            }
-                            break;
-                        case "Receiver Hit Data":
-                            if (Map[0] == null)
-                            {
-                                Map = new Mapping.PachMapReceiver[1];
-                                Map[0] = new Mapping.PachMapReceiver();
-                                Map[0].CutOffTime = (double)SampleCT / (double)SampleRate;
-                                Map[0].SampleRate = SampleRate;
-                                Map[0].SampleCT = SampleCT;
-                                Map[0].Map_Mesh = Map_Mesh;
-                                Map[0].Rec_List = new Mapping.PachMapReceiver.Map_Receiver[Rec_CT];
-                                Map[0].SrcType = "Geodesic";
-                            }
+            //                for (int s = 0; s < s_ct; s++)
+            //                {
+            //                    Map[s] = new Mapping.PachMapReceiver();
+            //                    Map[s].CutOffTime = (double)SampleCT / (double)SampleRate * 1000;
+            //                    Map[s].SampleCT = SampleCT;
+            //                    Map[s].SampleRate = SampleRate;
+            //                    Map[s].Map_Mesh = Map_Mesh;
+            //                    Map[s].Rec_List = new Mapping.PachMapReceiver.Map_Receiver[Rec_CT];
+            //                    Map[s].Src = new Point(sr.ReadDouble(), sr.ReadDouble(), sr.ReadDouble());
+            //                    Map[s].SrcType = sr.ReadString();
+            //                    //4.4 Source delay (ms)
+            //                    if (version > 2.0 || (version == 2.0 && rev >= 1))
+            //                    {
+            //                        delay[s] = sr.ReadDouble();
+            //                    }
+            //                }
+            //                break;
+            //            case "Receiver Hit Data":
+            //                if (Map[0] == null)
+            //                {
+            //                    Map = new Mapping.PachMapReceiver[1];
+            //                    Map[0] = new Mapping.PachMapReceiver();
+            //                    Map[0].CutOffTime = (double)SampleCT / (double)SampleRate;
+            //                    Map[0].SampleRate = SampleRate;
+            //                    Map[0].SampleCT = SampleCT;
+            //                    Map[0].Map_Mesh = Map_Mesh;
+            //                    Map[0].Rec_List = new Mapping.PachMapReceiver.Map_Receiver[Rec_CT];
+            //                    Map[0].SrcType = "Geodesic";
+            //                }
 
-                            //8. Announce that the following data pertains to the receiver histograms (string)                        
-                            //8a. Announce whether or not data is linked to vertices rather than faces (bool)
-                            bool vert_Receiver = sr.ReadBoolean();
-                            for (int s = 0; s < s_ct; s++)
-                            {
-                                Map[s].Rec_Vertex = vert_Receiver;
-                                for (int i = 0; i < Map[s].Rec_List.Length; i++)
-                                {
-                                    //for version 1.7 and up, write direct sound arrival time.
-                                    //Write Receiver Index (int)
-                                    int j = (int)sr.ReadUInt32();
-                                    //Write Direct Sound Arrival Time.
-                                    double Direct_Time;
-                                    if (version >= 1.7) Direct_Time = sr.ReadDouble(); else Direct_Time = (Utilities.PachTools.RPttoHPt(Map[s].Src) - Map[s].Rec_List[i].H_Origin).Length() / 343f;
-                                    //Write Impedance of Air
-                                    double Rho_C = version >= 2.0 ? sr.ReadDouble() : 400;
+            //                //8. Announce that the following data pertains to the receiver histograms (string)                        
+            //                //8a. Announce whether or not data is linked to vertices rather than faces (bool)
+            //                bool vert_Receiver = sr.ReadBoolean();
+            //                for (int s = 0; s < s_ct; s++)
+            //                {
+            //                    Map[s].Rec_Vertex = vert_Receiver;
+            //                    for (int i = 0; i < Map[s].Rec_List.Length; i++)
+            //                    {
+            //                        //for version 1.7 and up, write direct sound arrival time.
+            //                        //Write Receiver Index (int)
+            //                        int j = (int)sr.ReadUInt32();
+            //                        //Write Direct Sound Arrival Time.
+            //                        double Direct_Time;
+            //                        if (version >= 1.7) Direct_Time = sr.ReadDouble(); else Direct_Time = (Utilities.PachTools.RPttoHPt(Map[s].Src) - Map[s].Rec_List[i].H_Origin).Length() / 343f;
+            //                        //Write Impedance of Air
+            //                        double Rho_C = version >= 2.0 ? sr.ReadDouble() : 400;
 
-                                    if (vert_Receiver)
-                                    {
-                                        Map[s].Rec_List[i] = new Mapping.PachMapReceiver.Map_Receiver(Map_Mesh.Vertices[i], new Rhino.Geometry.Point3f((float)Map[s].Src.X, (float)Map[s].Src.Y, (float)Map[s].Src.Z), Direct_Time, Rho_C, i, SampleRate, SampleCT, Directional);
-                                    }
-                                    else 
-                                    {
-                                        Rhino.Geometry.Point3d RecLoc = Map_Mesh.Faces.GetFaceCenter(i);
-                                        Map[s].Rec_List[i] = new Mapping.PachMapReceiver.Map_Receiver(new Rhino.Geometry.Point3f((float)RecLoc.X, (float)RecLoc.Y, (float)RecLoc.Z), new Rhino.Geometry.Point3f((float)Map[s].Src.X, (float)Map[s].Src.Y, (float)Map[s].Src.Z), Direct_Time, Rho_C, i, SampleRate, SampleCT, Directional);
-                                    }
+            //                        if (vert_Receiver)
+            //                        {
+            //                            Map[s].Rec_List[i] = new Mapping.PachMapReceiver.Map_Receiver(Map_Mesh.Vertices[i], new Point((float)Map[s].Src.x, (float)Map[s].Src.y, (float)Map[s].Src.z), Direct_Time, Rho_C, i, SampleRate, SampleCT, Directional);
+            //                        }
+            //                        else 
+            //                        {
+            //                            Point RecLoc = Map_Mesh.Faces.GetFaceCenter(i);
+            //                            Map[s].Rec_List[i] = new Mapping.PachMapReceiver.Map_Receiver(new Point((float)RecLoc.x, (float)RecLoc.y, (float)RecLoc.z), new Point((float)Map[s].Src.x, (float)Map[s].Src.y, (float)Map[s].Src.z), Direct_Time, Rho_C, i, SampleRate, SampleCT, Directional);
+            //                        }
 
-                                    for (int Octave = 0; Octave < 8; Octave++)
-                                    {
-                                        //Write Octave (int)
-                                        int Oct_out = (int)sr.ReadUInt32();
-                                        if (Oct_out != Octave) throw new Exception(string.Format("Octave {0} Expected", Octave));
-                                        double[] Hist = Map[s].Rec_List[i].GetEnergyHistogram(Octave);
-                                        if (Directional)
-                                        {
-                                            if (version < 1.7)
-                                            {
-                                                for (int e = 0; e < SampleCT; e++) 
-                                                    Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), Octave);
-                                            }
-                                            else
-                                            {
-                                                for (int e = 0; e < SampleCT; e++)
-                                                    Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), Octave);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (version < 1.7)
-                                            {
-                                                for (int e = 0; e < SampleCT; e++)
-                                                    Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(0, 0, 0), new Hare.Geometry.Vector(0, 0, 0), Octave);
-                                            }
-                                            else
-                                            {
-                                                for (int e = 0; e < SampleCT; e++)
-                                                    Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(0, 0, 0), new Hare.Geometry.Vector(0,0,0), Octave);
-                                            }                                            
-                                        }
-                                    }
-                                    if (sr.ReadString() != "End_Receiver_Hits") throw new Exception("End of Receiver Hits Expected");
-                                }
-                            }
-                            break;
-                        case "End_of_File":
-                            sr.Close();
-                            return true;
-                    }
-                } while (true);
-                throw new Exception("Unsuccessful Read");
-            }
+            //                        for (int Octave = 0; Octave < 8; Octave++)
+            //                        {
+            //                            //Write Octave (int)
+            //                            int Oct_out = (int)sr.ReadUInt32();
+            //                            if (Oct_out != Octave) throw new Exception(string.Format("Octave {0} Expected", Octave));
+            //                            double[] Hist = Map[s].Rec_List[i].GetEnergyHistogram(Octave);
+            //                            if (Directional)
+            //                            {
+            //                                if (version < 1.7)
+            //                                {
+            //                                    for (int e = 0; e < SampleCT; e++) 
+            //                                        Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), Octave);
+            //                                }
+            //                                else
+            //                                {
+            //                                    for (int e = 0; e < SampleCT; e++)
+            //                                        Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), new Hare.Geometry.Vector(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()), Octave);
+            //                                }
+            //                            }
+            //                            else
+            //                            {
+            //                                if (version < 1.7)
+            //                                {
+            //                                    for (int e = 0; e < SampleCT; e++)
+            //                                        Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(0, 0, 0), new Hare.Geometry.Vector(0, 0, 0), Octave);
+            //                                }
+            //                                else
+            //                                {
+            //                                    for (int e = 0; e < SampleCT; e++)
+            //                                        Map[s].Rec_List[i].Combine_Sample(e, sr.ReadDouble(), new Hare.Geometry.Vector(0, 0, 0), new Hare.Geometry.Vector(0,0,0), Octave);
+            //                                }                                            
+            //                            }
+            //                        }
+            //                        if (sr.ReadString() != "End_Receiver_Hits") throw new Exception("End of Receiver Hits Expected");
+            //                    }
+            //                }
+            //                break;
+            //            case "End_of_File":
+            //                sr.Close();
+            //                return true;
+            //        }
+            //    } while (true);
+            //    throw new Exception("Unsuccessful Read");
+            //}
         }
     }
 }

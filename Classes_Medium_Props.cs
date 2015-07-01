@@ -220,7 +220,7 @@ namespace Pachyderm_Acoustic
             public abstract double[] Attenuation_Coef(Hare.Geometry.Point pt);
             public abstract double Attenuation_Coef(int arg, int octave);
             public abstract double Sound_Speed(Hare.Geometry.Point pt);
-            public abstract double Sound_Speed(Rhino.Geometry.Point3d pt);
+            //public abstract double Sound_Speed(Hare.Geometry.Point pt);
             public abstract double Sound_Speed(int arg);
             public abstract double Rho(Hare.Geometry.Point pt);
             public abstract double Rho(int arg);
@@ -302,10 +302,10 @@ namespace Pachyderm_Acoustic
                 return C_Sound;
             }
 
-            public override double Sound_Speed(Rhino.Geometry.Point3d pt)
-            {
-                return C_Sound;
-            }
+            //public override double Sound_Speed(Point pt)
+            //{
+            //    return C_Sound;
+            //}
 
             public override double Sound_Speed(int arg)
             {
@@ -437,14 +437,14 @@ namespace Pachyderm_Acoustic
                 return C_Sound[XYTot * Z + Ydom * X + Y];
             }
 
-            public override double Sound_Speed(Rhino.Geometry.Point3d pt)
-            {
-                int X = (int)Math.Floor((pt.X - MinX) / VdimX);
-                int Y = (int)Math.Floor((pt.Y - MinY) / VdimY);
-                int Z = (int)Math.Floor((pt.Z - MinZ) / VdimZ);
+            //public override double Sound_Speed(Point pt)
+            //{
+            //    int X = (int)Math.Floor((pt.x - MinX) / VdimX);
+            //    int Y = (int)Math.Floor((pt.y - MinY) / VdimY);
+            //    int Z = (int)Math.Floor((pt.z - MinZ) / VdimZ);
 
-                return C_Sound[XYTot * Z + Ydom * X + Y];
-            }
+            //    return C_Sound[XYTot * Z + Ydom * X + Y];
+            //}
 
             public override double Sound_Speed(int voxelCode)
             {

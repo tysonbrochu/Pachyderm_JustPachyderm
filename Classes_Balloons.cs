@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using Hare.Geometry;
-using Rhino.Geometry;
 
 namespace Pachyderm_Acoustic
 {
@@ -28,11 +27,11 @@ namespace Pachyderm_Acoustic
         /// <summary>
         /// A mesh edited to show position and aim.
         /// </summary>
-        public Mesh m_DisplayMesh;
+        //public Mesh m_DisplayMesh;
         /// <summary>
         /// Original mesh used to create display mesh.
         /// </summary>
-        public Mesh m_RhinoMesh;
+        //public Mesh m_RhinoMesh;
         /// <summary>
         /// Original mesh used for the final source object.
         /// </summary>
@@ -41,7 +40,7 @@ namespace Pachyderm_Acoustic
         string SWL;
         int Type;
 
-        public Speaker_Balloon(string[] Ballooncode_in, string SWL_in, int Type_in, Point3d Center)//int sym_in,
+        public Speaker_Balloon(string[] Ballooncode_in, string SWL_in, int Type_in, Point Center)//int sym_in,
         {
             code = Ballooncode_in;
             Type = Type_in;
@@ -149,26 +148,26 @@ namespace Pachyderm_Acoustic
                 foreach (Hare.Geometry.Point[] Poly in list) m_HareMesh[oct - 1].Add_Polygon(Poly);
             }
             //RhinoMeshStuff
-            m_RhinoMesh = new Mesh();
-            int ct = 0;
-            for (int i = 0; i < m_HareMesh[4].Polygon_Count; i++)
-            {
-                Hare.Geometry.Point[] Pt = m_HareMesh[4].Polygon_Vertices(i);
-                int[] F = new int[m_HareMesh[4].Polys[i].VertextCT];
-                //List<Point3d> F = new List<Point3d>();
-                for (int j = 0; j < m_HareMesh[4].Polys[i].VertextCT; j++)
-                {
-                    m_RhinoMesh.Vertices.Add(new Point3d(Pt[j].x, Pt[j].y, Pt[j].z) / 90);
-                    F[j] = ct;
-                    //F.Add(new Point3d(Pt[j].x, Pt[j].y, Pt[j].z) / 200);
-                    ct++;
-                }
-                m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0], F[3]);
-            }
-            m_RhinoMesh.FaceNormals.ComputeFaceNormals();
-            m_RhinoMesh.Normals.ComputeNormals();
-            m_DisplayMesh = m_RhinoMesh.DuplicateMesh();
-            Update_Position(new Point3f((float)Center.X, (float)Center.Y, (float)Center.Z));
+            //m_RhinoMesh = new Mesh();
+            //int ct = 0;
+            //for (int i = 0; i < m_HareMesh[4].Polygon_Count; i++)
+            //{
+            //    Hare.Geometry.Point[] Pt = m_HareMesh[4].Polygon_Vertices(i);
+            //    int[] F = new int[m_HareMesh[4].Polys[i].VertextCT];
+            //    //List<Point> F = new List<Point>();
+            //    for (int j = 0; j < m_HareMesh[4].Polys[i].VertextCT; j++)
+            //    {
+            //        m_RhinoMesh.Vertices.Add(new Point(Pt[j].x, Pt[j].y, Pt[j].z) / 90);
+            //        F[j] = ct;
+            //        //F.Add(new Point(Pt[j].x, Pt[j].y, Pt[j].z) / 200);
+            //        ct++;
+            //    }
+            //    m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0], F[3]);
+            //}
+            //m_RhinoMesh.FaceNormals.ComputeFaceNormals();
+            //m_RhinoMesh.Normals.ComputeNormals();
+            //m_DisplayMesh = m_RhinoMesh.DuplicateMesh();
+            //Update_Position(new Point((float)Center.x, (float)Center.y, (float)Center.z));
         }
 
         public Topology[] Balloons(double[] spl_values)
@@ -299,47 +298,47 @@ namespace Pachyderm_Acoustic
             return Balloon;
         }
 
-        public void Update_Position()
-        {
-            Update_Position(CurrentPos);
-        }
+        //public void Update_Position()
+        //{
+        //    Update_Position(CurrentPos);
+        //}
 
-        public void Update_Position(Point3f Center)
-        {
-            for (int i = 0; i < m_DisplayMesh.Vertices.Count; i++)
-            {
-                Point3f Po = m_RhinoMesh.Vertices[i];
-                Point3f P =  new Point3f(m_RhinoMesh.Vertices[i].X + Center.X - CurrentPos.X, m_RhinoMesh.Vertices[i].Y + Center.Y - CurrentPos.Y, m_RhinoMesh.Vertices[i].Z + Center.Z - CurrentPos.Z);
-                m_RhinoMesh.Vertices.SetVertex(i, P);
-                Point3f Pn = m_RhinoMesh.Vertices[i];
-                double x = Po.Y + Pn.Y;
-            }
-            CurrentPos = Center;
-            Update_Aim();
-        }
+        //public void Update_Position(Point Center)
+        //{
+        //    for (int i = 0; i < m_DisplayMesh.Vertices.Count; i++)
+        //    {
+        //        Point Po = m_RhinoMesh.Vertices[i];
+        //        Point P =  new Point(m_RhinoMesh.Vertices[i].x + Center.x - CurrentPos.x, m_RhinoMesh.Vertices[i].y + Center.y - CurrentPos.y, m_RhinoMesh.Vertices[i].z + Center.z - CurrentPos.z);
+        //        m_RhinoMesh.Vertices.SetVertex(i, P);
+        //        Point Pn = m_RhinoMesh.Vertices[i];
+        //        double x = Po.y + Pn.y;
+        //    }
+        //    CurrentPos = Center;
+        //    Update_Aim();
+        //}
 
-        Point3f CurrentPos = new Point3f(0,0,0);
+        Point CurrentPos = new Point(0,0,0);
         public float CurrentAlt, CurrentAzi, CurrentAxi;
 
-        public void Update_Aim()
-        {
-            this.m_DisplayMesh = m_RhinoMesh.DuplicateMesh();
-            for (int i = 0; i < m_DisplayMesh.Vertices.Count; i++)
-            {
-                m_DisplayMesh.Vertices[i] = new Point3f(m_DisplayMesh.Vertices[i].X - CurrentPos.X, m_DisplayMesh.Vertices[i].Y - CurrentPos.Y, m_DisplayMesh.Vertices[i].Z - CurrentPos.Z);
-                double roll = CurrentAxi * Math.PI / 180;
-                double yaw = CurrentAlt * Math.PI / 180;
-                double pitch = CurrentAzi * Math.PI / 180;
+        //public void Update_Aim()
+        //{
+        //    this.m_DisplayMesh = m_RhinoMesh.DuplicateMesh();
+        //    for (int i = 0; i < m_DisplayMesh.Vertices.Count; i++)
+        //    {
+        //        m_DisplayMesh.Vertices[i] = new Point(m_DisplayMesh.Vertices[i].x - CurrentPos.x, m_DisplayMesh.Vertices[i].y - CurrentPos.y, m_DisplayMesh.Vertices[i].z - CurrentPos.z);
+        //        double roll = CurrentAxi * Math.PI / 180;
+        //        double yaw = CurrentAlt * Math.PI / 180;
+        //        double pitch = CurrentAzi * Math.PI / 180;
 
-                double x = m_DisplayMesh.Vertices[i].X;
-                m_DisplayMesh.Vertices[i] = new Point3f((float)(x * Math.Cos(roll) - m_DisplayMesh.Vertices[i].Z * Math.Sin(roll)), m_DisplayMesh.Vertices[i].Y,(float)(x * Math.Sin(roll) + m_DisplayMesh.Vertices[i].Z * Math.Cos(roll)));
-                double y = m_DisplayMesh.Vertices[i].Y;
-                m_DisplayMesh.Vertices[i] = new Point3f(m_DisplayMesh.Vertices[i].X, (float)(y * Math.Cos(yaw) - m_DisplayMesh.Vertices[i].Z * Math.Sin(yaw)),(float)(y * Math.Sin(yaw) + m_DisplayMesh.Vertices[i].Z * Math.Cos(yaw)));
-                x = m_DisplayMesh.Vertices[i].X;
-                m_DisplayMesh.Vertices[i] = new Point3f((float)(x * Math.Cos(pitch) - m_DisplayMesh.Vertices[i].Y * Math.Sin(pitch)), (float)(x * Math.Sin(pitch) + m_DisplayMesh.Vertices[i].Y * Math.Cos(pitch)), m_DisplayMesh.Vertices[i].Z);
+        //        double x = m_DisplayMesh.Vertices[i].x;
+        //        m_DisplayMesh.Vertices[i] = new Point((float)(x * Math.Cos(roll) - m_DisplayMesh.Vertices[i].z * Math.Sin(roll)), m_DisplayMesh.Vertices[i].y,(float)(x * Math.Sin(roll) + m_DisplayMesh.Vertices[i].z * Math.Cos(roll)));
+        //        double y = m_DisplayMesh.Vertices[i].y;
+        //        m_DisplayMesh.Vertices[i] = new Point(m_DisplayMesh.Vertices[i].x, (float)(y * Math.Cos(yaw) - m_DisplayMesh.Vertices[i].z * Math.Sin(yaw)),(float)(y * Math.Sin(yaw) + m_DisplayMesh.Vertices[i].z * Math.Cos(yaw)));
+        //        x = m_DisplayMesh.Vertices[i].x;
+        //        m_DisplayMesh.Vertices[i] = new Point((float)(x * Math.Cos(pitch) - m_DisplayMesh.Vertices[i].y * Math.Sin(pitch)), (float)(x * Math.Sin(pitch) + m_DisplayMesh.Vertices[i].y * Math.Cos(pitch)), m_DisplayMesh.Vertices[i].z);
                 
-                m_DisplayMesh.Vertices[i] = new Point3f(m_DisplayMesh.Vertices[i].X + CurrentPos.X, m_DisplayMesh.Vertices[i].Y + CurrentPos.Y, m_DisplayMesh.Vertices[i].Z + CurrentPos.Z);
-            }
-        }
+        //        m_DisplayMesh.Vertices[i] = new Point(m_DisplayMesh.Vertices[i].x + CurrentPos.x, m_DisplayMesh.Vertices[i].y + CurrentPos.y, m_DisplayMesh.Vertices[i].z + CurrentPos.z);
+        //    }
+        //}
     }
 }

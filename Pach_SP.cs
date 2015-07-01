@@ -887,7 +887,7 @@ namespace Pachyderm_Acoustic
                 System.Threading.Semaphore S = new System.Threading.Semaphore(0, 1);
                 S.Release(1);
 
-                int proc = UI.PachydermAc_PlugIn.Instance.ProcessorSpec();
+                int proc = 4;//UI.PachydermAc_PlugIn.Instance.ProcessorSpec();
                 double[][] output = new double[proc][];
                 double[][] samplep = new double[proc][];
                 System.Threading.Thread[] T = new System.Threading.Thread[proc];

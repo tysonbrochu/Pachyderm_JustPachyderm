@@ -74,10 +74,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Resources\NAudio.dll</HintPath>
     </Reference>
-    <Reference Include="RhinoCommon">
-      <HintPath>..\..\..\..\..\Program Files\Rhinoceros 5 (64-bit)\System\RhinoCommon.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core">
@@ -102,7 +98,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Auralisation_Conduit.cs" />
     <Compile Include="Classes_Absorption_Matrices.cs" />
     <Compile Include="Classes_Materials.cs" />
     <Compile Include="Classes_Special.cs" />
@@ -112,62 +107,14 @@
     <Compile Include="Classes_Compact_FDTD_complex_Boundaries.cs" />
     <Compile Include="Classes_Compact_FDTD_complex.cs" />
     <Compile Include="Classes_FDTD_complex.cs" />
-    <Compile Include="Classes_FDTD.cs" />
-    <Compile Include="Classes_RC_Scene.cs" />
-    <Compile Include="Classes_RCVoxel.cs" />
     <Compile Include="Classes_IO.cs" />
     <Compile Include="FFTW_Interop.cs" />
     <Compile Include="FFTW_Managed.cs" />
-    <Compile Include="Pach_Properties.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_Properties.Designer.cs">
-      <DependentUpon>Pach_Properties.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pach_MapCustom.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_MapCustom.Designer.cs">
-      <DependentUpon>Pach_MapCustom.cs</DependentUpon>
-    </Compile>
-    <Compile Include="VoxelConduit.cs" />
-    <Compile Include="SrfSources.cs" />
-    <Compile Include="Pach_Absorption_Designer.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Pach_Absorption_Designer.Designer.cs">
-      <DependentUpon>Pach_Absorption_Designer.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pach_Auralisation.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_Auralisation.designer.cs">
-      <DependentUpon>Pach_Auralisation.cs</DependentUpon>
-    </Compile>
     <Compile Include="Pachyderm_Splash.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Pachyderm_Splash.Designer.cs">
       <DependentUpon>Pachyderm_Splash.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pach_Special_Command.cs" />
-    <Compile Include="Pach_FDTDControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_FDTDControl.Designer.cs">
-      <DependentUpon>Pach_FDTDControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pach_SourceControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_SourceControl.Designer.cs">
-      <DependentUpon>Pach_SourceControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pach_Visual_Control.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_Visual_Control.Designer.cs">
-      <DependentUpon>Pach_Visual_Control.cs</DependentUpon>
     </Compile>
     <Compile Include="LineSources.cs" />
     <Compile Include="Classes_Balloons.cs" />
@@ -177,49 +124,20 @@
     <Compile Include="Classes_ImageSource.cs" />
     <Compile Include="Classes_IS_Trace.cs" />
     <Compile Include="Classes_Math.cs" />
-    <Compile Include="Classes_Particles.cs" />
     <Compile Include="Classes_Rays.cs" />
     <Compile Include="Classes_Receivers.cs" />
     <Compile Include="Classes_Scenes.cs" />
     <Compile Include="Classes_Simulation_Type.cs" />
     <Compile Include="Classes_Sources.cs" />
-    <Compile Include="Pach_Obj_Props.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_Obj_Props.Designer.cs">
-      <DependentUpon>Pach_Obj_Props.cs</DependentUpon>
-    </Compile>
-    <Compile Include="GetModel.cs" />
-    <Compile Include="Insert_Receiver_Command.cs" />
-    <Compile Include="Insert_Source_Command.cs" />
-    <Compile Include="Materials.cs" />
-    <Compile Include="Pachyderm_AcousticPlugIn.cs" />
-    <Compile Include="Pachyderm_Acoustic_command.cs" />
     <Compile Include="Pach_Graphics.cs" />
-    <Compile Include="Pach_Hybrid_Control.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_Hybrid_Control.designer.cs">
-      <DependentUpon>Pach_Hybrid_Control.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pach_Hybrid_UI_IO.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
     <Compile Include="Pach_Map_Receiver.cs" />
     <Compile Include="Pach_RunSim_Command.cs" />
     <Compile Include="Pach_SP.cs" />
-    <Compile Include="ParticleConduit.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Pach_Mapping_Control.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pach_Mapping_Control.Designer.cs">
-      <DependentUpon>Pach_Mapping_Control.cs</DependentUpon>
     </Compile>
     <Compile Include="VisualizeGraph.cs">
       <SubType>Form</SubType>
@@ -253,40 +171,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Pach_Absorption_Designer.resx">
-      <DependentUpon>Pach_Absorption_Designer.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_Properties.resx">
-      <DependentUpon>Pach_Properties.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_Auralisation.resx">
-      <DependentUpon>Pach_Auralisation.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_Obj_Props.resx">
-      <DependentUpon>Pach_Obj_Props.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_Hybrid_Control.resx">
-      <DependentUpon>Pach_Hybrid_Control.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_Mapping_Control.resx">
-      <DependentUpon>Pach_Mapping_Control.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_FDTDControl.resx">
-      <DependentUpon>Pach_FDTDControl.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_SourceControl.resx">
-      <DependentUpon>Pach_SourceControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pach_Visual_Control.resx">
-      <DependentUpon>Pach_Visual_Control.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="VisualizeGraph.resx">
       <DependentUpon>VisualizeGraph.cs</DependentUpon>

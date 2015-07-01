@@ -16,10 +16,6 @@
 //'License along with Pachyderm-Acoustic; if not, write to the Free Software 
 //'Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 
-using Rhino.Commands;
-using System.Collections.Generic;
-using System;
-
 namespace Pachyderm_Acoustic
 {
     namespace UI
@@ -29,11 +25,11 @@ namespace Pachyderm_Acoustic
         /// DO NOT create an instance of this class (this is the responsibility of Rhino.NET.)
         /// </summary>
         /// 
-        [System.Runtime.InteropServices.Guid("D3381146-DC13-44bb-8382-741669B9C66E")]
-        [Rhino.Commands.CommandStyle(Rhino.Commands.Style.Hidden)]
-        public class Pach_RunSim_Command : Command
+        //[System.Runtime.InteropServices.Guid("D3381146-DC13-44bb-8382-741669B9C66E")]
+        //[Rhino.Commands.CommandStyle(Rhino.Commands.Style.Hidden)]
+        public class Pach_RunSim_Command //: Command
         {
-                        ///<summary> 
+            ///<summary> 
             /// Rhino tracks commands by their unique ID. Every command must have a unique id. 
             /// The Guid created by the project wizard is unique. You can create more Guids using 
             /// the "Create Guid" tool in the Tools menu. 
@@ -55,56 +51,61 @@ namespace Pachyderm_Acoustic
 
 
             ///<returns>The command name as it appears on the Rhino command line</returns>
-            public override string EnglishName
-            {
-                get
-                {
-                    return "Run_Simulation";
-                }
-            }
+            //public override string EnglishName
+            //{
+            //    get
+            //    {
+            //        return "Run_Simulation";
+            //    }
+            //}
 
             public Simulation_Type Sim = null;
-            public Result CommandResult = Result.Nothing;
+            //public Result CommandResult = Result.Nothing;
             private bool CancelCalc = false;
             public System.Threading.CountdownEvent CD = new System.Threading.CountdownEvent(0);
 
+            bool success = false;
+
             ///<summary> This gets called when when the user runs this command.</summary>
-            protected override Result RunCommand(Rhino.RhinoDoc doc, RunMode mode)
+            //protected override Result RunCommand(Rhino.RhinoDoc doc, RunMode mode)
+            public bool RunSim()
             {
-                if (Rhino.RhinoDoc.ActiveDoc.ModelUnitSystem != Rhino.UnitSystem.Meters)
-                {
-                    System.Windows.Forms.MessageBox.Show("At this point in development, Pachyderm supports documents in meters only. Please set the document units to meters, and run the calculation again.\n(A quick way to get to the document units control is to type 'units' into the command prompt.)");
-                    CommandResult = Result.Cancel;
-                    return CommandResult;
-                }
-                
+                //if (Rhino.RhinoDoc.ActiveDoc.ModelUnitSystem != Rhino.UnitSystem.Meters)
+                //{
+                //    System.Windows.Forms.MessageBox.Show("At this point in development, Pachyderm supports documents in meters only. Please set the document units to meters, and run the calculation again.\n(A quick way to get to the document units control is to type 'units' into the command prompt.)");
+                //    CommandResult = Result.Cancel;
+                //    return CommandResult;
+                //}
+
                 ////In order to deal with latency in memory, a thread sleep of 1 second is inserted...
                 //System.Threading.Thread.Sleep(1000);
                 //////////////////////////////////////////////////////////////////////////////////////
-                Rhino.RhinoApp.EscapeKeyPressed += Escape;
+                //Rhino.RhinoApp.EscapeKeyPressed += Escape;
                 CancelCalc = false;
-                CommandResult = Result.Success;
-                Rhino.ApplicationSettings.FileSettings.AutoSaveEnabled = false;
+                //CommandResult = Result.Success;
+                success = true;
+                //Rhino.ApplicationSettings.FileSettings.AutoSaveEnabled = false;
 
                 if (Sim != null)
                 {
                     Sim.Begin();
-                    Rhino.RhinoApp.SetCommandPrompt(string.Format("Initiating {0} Calculation...", Sim.Sim_Type()));
+                    //Rhino.RhinoApp.SetCommandPrompt(string.Format("Initiating {0} Calculation...", Sim.Sim_Type()));
                     do
                     {
-                        if (CancelCalc)
-                        {
-                            Sim.Abort_Calculation();
-                            CommandResult = Result.Cancel;
-                            Rhino.ApplicationSettings.FileSettings.AutoSaveEnabled = true;
-                            return CommandResult;
-                        }
+                        //if (CancelCalc)
+                        //{
+                        //    Sim.Abort_Calculation();
+                        //    CommandResult = Result.Cancel;
+                        //    Rhino.ApplicationSettings.FileSettings.AutoSaveEnabled = true;
+                        //    return CommandResult;
+                        //    Success = false;
+                        //}
                         if (Sim.ThreadState() != System.Threading.ThreadState.Running)
                         {
                             break;
                         }
                         System.Threading.Thread.Sleep(3000);
-                        Rhino.RhinoApp.SetCommandPrompt(Sim.ProgressMsg());
+                        //Rhino.RhinoApp.SetCommandPrompt(Sim.ProgressMsg());
                     } while (true);
 
                     Sim.Combine_ThreadLocal_Results();
@@ -115,14 +116,15 @@ namespace Pachyderm_Acoustic
                         {
                             break;
                         }
-                        Rhino.RhinoApp.SetCommandPrompt(Sim.ProgressMsg());
+                        //Rhino.RhinoApp.SetCommandPrompt(Sim.ProgressMsg());
                     } while (true);
                 }
 
-                Rhino.ApplicationSettings.FileSettings.AutoSaveEnabled = true;
+                //Rhino.ApplicationSettings.FileSettings.AutoSaveEnabled = true;
                 //System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.Interactive;
-                Rhino.RhinoDoc.ActiveDoc.Views.RedrawEnabled = true;
-                return CommandResult;
+                //Rhino.RhinoDoc.ActiveDoc.Views.RedrawEnabled = true;
+                //return CommandResult;
+                return success;
             }
 
             private void Escape(object sender, System.EventArgs e)
@@ -133,7 +135,7 @@ namespace Pachyderm_Acoustic
             public void Reset()
             {
                 Sim = null;
-                CommandResult = Result.Nothing;
+                //CommandResult = Result.Nothing;
             }
         }
     }

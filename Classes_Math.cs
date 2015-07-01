@@ -18,10 +18,9 @@
 
 using System.Collections.Generic;
 using System;
-using Rhino.Geometry;
 using Pachyderm_Acoustic.Environment;
 using System.Linq;
-using Hare;
+using Hare.Geometry;
 
 namespace Pachyderm_Acoustic
 {
@@ -880,10 +879,10 @@ namespace Pachyderm_Acoustic
                             double L = VTot.Length();
                             if (L > 0) Histogram[i] *= E / L;
 
-                            if (AcousticalMath.SPL_Intensity(Histogram[i]) > 200)
-                            {
-                                Rhino.RhinoApp.Write("Super high SPLs... what's going on, man?");
-                            }
+                            //if (AcousticalMath.SPL_Intensity(Histogram[i]) > 200)
+                            //{
+                            //    Rhino.RhinoApp.Write("Super high SPLs... what's going on, man?");
+                            //}
                         }
                     }
 
@@ -1562,40 +1561,40 @@ namespace Pachyderm_Acoustic
             /// <param name="Volume"></param>
             /// <param name="SurfaceArea"></param>
             /// <returns>True if successful.</returns>
-            public static bool RoomVolume(List<Brep> Breps, ref double Volume, out double[] SurfaceArea)
-            {
-                //Brep[] BrepList = null;
-                //List<Brep> BrepIN = new List<Brep>();
-                SurfaceArea = new double[Breps.Count];
-                //OnMassProperties ap = new OnMassProperties();
-                for (int x = 0; x < Breps.Count; x++)
-                {
-                    AreaMassProperties ap = AreaMassProperties.Compute(Breps[x]);
-                    SurfaceArea[x] = ap.Area;
-                }
+            //public static bool RoomVolume(List<Brep> Breps, ref double Volume, out double[] SurfaceArea)
+            //{
+            //    //Brep[] BrepList = null;
+            //    //List<Brep> BrepIN = new List<Brep>();
+            //    SurfaceArea = new double[Breps.Count];
+            //    //OnMassProperties ap = new OnMassProperties();
+            //    for (int x = 0; x < Breps.Count; x++)
+            //    {
+            //        AreaMassProperties ap = AreaMassProperties.Compute(Breps[x]);
+            //        SurfaceArea[x] = ap.Area;
+            //    }
 
-                Brep[] Room = Brep.JoinBreps(Breps, 0.001);            
-                Rhino.RhinoApp.WriteLine("Room is not closed. Using Bounding Volume.");
-                BoundingBox Box = new BoundingBox();
-                foreach (Brep srf in Breps)
-                {
-                     Box.Union(srf.GetBoundingBox(false));
-                }
+            //    Brep[] Room = Brep.JoinBreps(Breps, 0.001);            
+            //    Rhino.RhinoApp.WriteLine("Room is not closed. Using Bounding Volume.");
+            //    BoundingBox Box = new BoundingBox();
+            //    foreach (Brep srf in Breps)
+            //    {
+            //         Box.Union(srf.GetBoundingBox(false));
+            //    }
 
-                ///////////////////////////////////////////////////////////////
-                //Rhino.RhinoDoc.ActiveDoc.Objects.AddPoints(Box.GetCorners());
-                ///////////////////////////////////////////////////////////////
-                try
-                {
-                    Volume = VolumeMassProperties.Compute(Box.ToBrep()).Volume;
-                }
-                catch 
-                {
-                    Volume = 0;
-                }
+            //    ///////////////////////////////////////////////////////////////
+            //    //Rhino.RhinoDoc.ActiveDoc.Objects.AddPoints(Box.GetCorners());
+            //    ///////////////////////////////////////////////////////////////
+            //    try
+            //    {
+            //        Volume = VolumeMassProperties.Compute(Box.ToBrep()).Volume;
+            //    }
+            //    catch 
+            //    {
+            //        Volume = 0;
+            //    }
 
-                return false;
-            }
+            //    return false;
+            //}
 
             /// <summary>
             /// The speed of sound in m/s.
@@ -2325,12 +2324,12 @@ namespace Pachyderm_Acoustic
                 return number;
             }
 
-            public static void World_Angles(Rhino.Geometry.Point3d Src, Rhino.Geometry.Point3d Rec, bool degrees, out double alt, out double azi)
+            public static void World_Angles(Point Src, Point Rec, bool degrees, out double alt, out double azi)
             {
-                Rhino.Geometry.Vector3d V = Src - Rec;
-                V.Unitize();
-                azi = Math.Atan2(V.Y, V.X);
-                alt = Math.Asin(V.Z);
+                Vector V = Src - Rec;
+                V.Normalize();
+                azi = Math.Atan2(V.y, V.x);
+                alt = Math.Asin(V.z);
 
                 while (azi < 0) azi += 2 * Math.PI;
 
@@ -2403,10 +2402,10 @@ namespace Pachyderm_Acoustic
             /// </summary>
             /// <param name="MinPt"></param>
             /// <param name="MaxPt"></param>
-            public static void AddBox(Point3d MinPt, Point3d MaxPt)
-            {
-                Rhino.RhinoDoc.ActiveDoc.Objects.AddBrep((new BoundingBox(MinPt, MaxPt)).ToBrep());
-            }
+            //public static void AddBox(Point MinPt, Point MaxPt)
+            //{
+            //    Rhino.RhinoDoc.ActiveDoc.Objects.AddBrep((new BoundingBox(MinPt, MaxPt)).ToBrep());
+            //}
 
             public static System.Drawing.Color HsvColor(double h, double S, double V)
             {
@@ -2510,13 +2509,15 @@ namespace Pachyderm_Acoustic
             /// <returns>the completed simulation...</returns>
             public static Simulation_Type Run_Simulation(Simulation_Type Sim)
             {
-                UI.PachydermAc_PlugIn plugin = UI.PachydermAc_PlugIn.Instance;
-                UI.Pach_RunSim_Command command = UI.Pach_RunSim_Command.Instance;
-                if (command == null) { return null; }
-                command.Reset();
-                command.Sim = Sim;
-                Rhino.RhinoApp.RunScript("Run_Simulation", false);
-                return command.Sim;
+                UI.Pach_RunSim_Command PRC = new UI.Pach_RunSim_Command();
+                PRC.Sim = Sim;
+                PRC.RunSim();
+                return PRC.Sim;
+                //if (command == null) { return null; }
+                //command.Reset();
+                //command.Sim = Sim;
+                //Rhino.RhinoApp.RunScript("Run_Simulation", false);
+                //return command.Sim;
             }
 
             /// <summary>
@@ -2528,29 +2529,29 @@ namespace Pachyderm_Acoustic
             /// <param name="AirAttenMethod"></param>
             /// <param name="EdgeFreq">Use edge frequency correction?</param>
             /// <returns></returns>
-            public static Environment.RhCommon_Scene Get_NURBS_Scene(double Rel_Humidity, double AirTempC,double AirPressurePa, int AirAttenMethod, bool EdgeFreq)
-            {
-                Rhino.DocObjects.ObjectEnumeratorSettings settings = new Rhino.DocObjects.ObjectEnumeratorSettings();
-                settings.DeletedObjects = false;
-                settings.HiddenObjects = false;
-                settings.LockedObjects = true;
-                settings.NormalObjects = true;
-                settings.VisibleFilter = true;
-                settings.ObjectTypeFilter = Rhino.DocObjects.ObjectType.Brep & Rhino.DocObjects.ObjectType.Surface & Rhino.DocObjects.ObjectType.Extrusion;
-                List<Rhino.DocObjects.RhinoObject> RC_List = new List<Rhino.DocObjects.RhinoObject>();
-                foreach (Rhino.DocObjects.RhinoObject RHobj in Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(settings))
-                {
-                    if (RHobj.ObjectType == Rhino.DocObjects.ObjectType.Brep || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Surface || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Extrusion)
-                    {
-                        RC_List.Add(RHobj);
-                    }
-                }
-                if (RC_List.Count != 0)
-                {
-                    return new Environment.RhCommon_Scene(RC_List, AirTempC, Rel_Humidity, AirPressurePa, AirAttenMethod, EdgeFreq, false);
-                }
-                return null;
-            }
+            //public static Environment.RhCommon_Scene Get_NURBS_Scene(double Rel_Humidity, double AirTempC,double AirPressurePa, int AirAttenMethod, bool EdgeFreq)
+            //{
+            //    Rhino.DocObjects.ObjectEnumeratorSettings settings = new Rhino.DocObjects.ObjectEnumeratorSettings();
+            //    settings.DeletedObjects = false;
+            //    settings.HiddenObjects = false;
+            //    settings.LockedObjects = true;
+            //    settings.NormalObjects = true;
+            //    settings.VisibleFilter = true;
+            //    settings.ObjectTypeFilter = Rhino.DocObjects.ObjectType.Brep & Rhino.DocObjects.ObjectType.Surface & Rhino.DocObjects.ObjectType.Extrusion;
+            //    List<Rhino.DocObjects.RhinoObject> RC_List = new List<Rhino.DocObjects.RhinoObject>();
+            //    foreach (Rhino.DocObjects.RhinoObject RHobj in Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(settings))
+            //    {
+            //        if (RHobj.ObjectType == Rhino.DocObjects.ObjectType.Brep || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Surface || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Extrusion)
+            //        {
+            //            RC_List.Add(RHobj);
+            //        }
+            //    }
+            //    if (RC_List.Count != 0)
+            //    {
+            //        return new Environment.RhCommon_Scene(RC_List, AirTempC, Rel_Humidity, AirPressurePa, AirAttenMethod, EdgeFreq, false);
+            //    }
+            //    return null;
+            //}
 
             /// <summary>
             /// Shorthand tool to obtain Polygon_Scene object.
@@ -2561,175 +2562,175 @@ namespace Pachyderm_Acoustic
             /// <param name="AirAttenMethod"></param>
             /// <param name="EdgeFreq">Use edge frequency correction?</param>
             /// <returns></returns>
-            public static Environment.Polygon_Scene Get_Poly_Scene(double Rel_Humidity, double AirTempC, double AirPressurePa, int AirAttenMethod, bool EdgeFreq)
-            {
-                Rhino.DocObjects.ObjectEnumeratorSettings settings = new Rhino.DocObjects.ObjectEnumeratorSettings();
-                settings.DeletedObjects = false;
-                settings.HiddenObjects = false;
-                settings.LockedObjects = true;
-                settings.NormalObjects = true;
-                settings.VisibleFilter = true;
-                settings.ObjectTypeFilter = Rhino.DocObjects.ObjectType.Brep & Rhino.DocObjects.ObjectType.Surface & Rhino.DocObjects.ObjectType.Extrusion;
-                List<Rhino.DocObjects.RhinoObject> RC_List = new List<Rhino.DocObjects.RhinoObject>();
-                foreach (Rhino.DocObjects.RhinoObject RHobj in Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(settings))
-                {
-                    if (RHobj.ObjectType == Rhino.DocObjects.ObjectType.Brep || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Surface || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Extrusion)
-                    {
-                        RC_List.Add(RHobj);
-                    }
-                }
-                if (RC_List.Count != 0)
-                {
-                    return new Environment.Polygon_Scene(RC_List, AirTempC, Rel_Humidity, AirPressurePa, AirAttenMethod, EdgeFreq, false);
-                }
-                return null;
-            }
+            //public static Environment.Polygon_Scene Get_Poly_Scene(double Rel_Humidity, double AirTempC, double AirPressurePa, int AirAttenMethod, bool EdgeFreq)
+            //{
+            //    Rhino.DocObjects.ObjectEnumeratorSettings settings = new Rhino.DocObjects.ObjectEnumeratorSettings();
+            //    settings.DeletedObjects = false;
+            //    settings.HiddenObjects = false;
+            //    settings.LockedObjects = true;
+            //    settings.NormalObjects = true;
+            //    settings.VisibleFilter = true;
+            //    settings.ObjectTypeFilter = Rhino.DocObjects.ObjectType.Brep & Rhino.DocObjects.ObjectType.Surface & Rhino.DocObjects.ObjectType.Extrusion;
+            //    List<Rhino.DocObjects.RhinoObject> RC_List = new List<Rhino.DocObjects.RhinoObject>();
+            //    foreach (Rhino.DocObjects.RhinoObject RHobj in Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(settings))
+            //    {
+            //        if (RHobj.ObjectType == Rhino.DocObjects.ObjectType.Brep || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Surface || RHobj.ObjectType == Rhino.DocObjects.ObjectType.Extrusion)
+            //        {
+            //            RC_List.Add(RHobj);
+            //        }
+            //    }
+            //    if (RC_List.Count != 0)
+            //    {
+            //        return new Environment.Polygon_Scene(RC_List, AirTempC, Rel_Humidity, AirPressurePa, AirAttenMethod, EdgeFreq, false);
+            //    }
+            //    return null;
+            //}
 
-            public static void Plot_Hare_Topology(Hare.Geometry.Topology T)
-            {
-                Mesh m_RhinoMesh = new Mesh();
-                int ct = 0;
-                for (int i = 0; i < T.Polygon_Count; i++)
-                {
-                    Hare.Geometry.Point[] Pt = T.Polygon_Vertices(i);
-                    int[] F = new int[T.Polys[i].VertextCT];
-                    for (int j = 0; j < T.Polys[i].VertextCT; j++)
-                    {
-                        m_RhinoMesh.Vertices.Add(new Point3d(Pt[j].x, Pt[j].y, Pt[j].z) / 90);
-                        F[j] = ct;
-                        ct++;
-                    }
-                    if (F.Length == 3)
-                    {
-                        m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0]);
-                    }
-                    else
-                    {
-                        m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0], F[3]);
-                    }
-                }
-                m_RhinoMesh.FaceNormals.ComputeFaceNormals();
-                m_RhinoMesh.Normals.ComputeNormals();
-                Rhino.RhinoDoc.ActiveDoc.Objects.Add(m_RhinoMesh);
-            }
+            //public static void Plot_Hare_Topology(Hare.Geometry.Topology T)
+            //{
+            //    Mesh m_RhinoMesh = new Mesh();
+            //    int ct = 0;
+            //    for (int i = 0; i < T.Polygon_Count; i++)
+            //    {
+            //        Hare.Geometry.Point[] Pt = T.Polygon_Vertices(i);
+            //        int[] F = new int[T.Polys[i].VertextCT];
+            //        for (int j = 0; j < T.Polys[i].VertextCT; j++)
+            //        {
+            //            m_RhinoMesh.Vertices.Add(new Point(Pt[j].x, Pt[j].y, Pt[j].z) / 90);
+            //            F[j] = ct;
+            //            ct++;
+            //        }
+            //        if (F.Length == 3)
+            //        {
+            //            m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0]);
+            //        }
+            //        else
+            //        {
+            //            m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0], F[3]);
+            //        }
+            //    }
+            //    m_RhinoMesh.FaceNormals.ComputeFaceNormals();
+            //    m_RhinoMesh.Normals.ComputeNormals();
+            //    Rhino.RhinoDoc.ActiveDoc.Objects.Add(m_RhinoMesh);
+            //}
 
-            public static Mesh Hare_to_RhinoMesh(Hare.Geometry.Topology T)
-            {
-                Mesh m_RhinoMesh = new Mesh();
-                int ct = 0;
-                for (int i = 0; i < T.Polygon_Count; i++)
-                {
-                    Hare.Geometry.Point[] Pt = T.Polygon_Vertices(i);
-                    int[] F = new int[T.Polys[i].VertextCT];
-                    for (int j = 0; j < T.Polys[i].VertextCT; j++)
-                    {
-                        m_RhinoMesh.Vertices.Add(new Point3d(Pt[j].x, Pt[j].y, Pt[j].z) / 90);
-                        F[j] = ct;
-                        ct++;
-                    }
-                    if (F.Length == 3)
-                    {
-                        m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0]);
-                    }
-                    else
-                    {
-                        m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0], F[3]);
-                    }
-                }
-                m_RhinoMesh.Normals.ComputeNormals();
-                m_RhinoMesh.Vertices.CombineIdentical(true, true);
-                m_RhinoMesh.Compact();
-                return m_RhinoMesh;
-            }
+            //public static Mesh Hare_to_RhinoMesh(Hare.Geometry.Topology T)
+            //{
+            //    Mesh m_RhinoMesh = new Mesh();
+            //    int ct = 0;
+            //    for (int i = 0; i < T.Polygon_Count; i++)
+            //    {
+            //        Hare.Geometry.Point[] Pt = T.Polygon_Vertices(i);
+            //        int[] F = new int[T.Polys[i].VertextCT];
+            //        for (int j = 0; j < T.Polys[i].VertextCT; j++)
+            //        {
+            //            m_RhinoMesh.Vertices.Add(new Point(Pt[j].x, Pt[j].y, Pt[j].z) / 90);
+            //            F[j] = ct;
+            //            ct++;
+            //        }
+            //        if (F.Length == 3)
+            //        {
+            //            m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0]);
+            //        }
+            //        else
+            //        {
+            //            m_RhinoMesh.Faces.AddFace(F[2], F[1], F[0], F[3]);
+            //        }
+            //    }
+            //    m_RhinoMesh.Normals.ComputeNormals();
+            //    m_RhinoMesh.Vertices.CombineIdentical(true, true);
+            //    m_RhinoMesh.Compact();
+            //    return m_RhinoMesh;
+            //}
 
-            /// <summary>
-            /// Shorthand tool for map mesh objects.
-            /// </summary>
-            /// <param name="Map_Srf">A NURBS surface to mesh.</param>
-            /// <param name="Increment">the maximum dimension between vertices.</param>
-            /// <returns>the map mesh object.</returns>
-            public static Mesh Create_Map_Mesh(IEnumerable<Brep> Map_Srf, double Increment)
-            {
-                Mesh Map_Mesh = new Mesh();
-                MeshingParameters mp = new MeshingParameters();
-                mp.MaximumEdgeLength = Increment;
-                mp.MinimumEdgeLength = Increment;
-                mp.SimplePlanes = false;
-                mp.JaggedSeams = false;
-                Brep[] Srfs = Map_Srf.ToArray<Brep>();
-                for (int i = 0; i < Map_Srf.ToArray<Brep>().Length; i++) Map_Mesh.Append(Rhino.Geometry.Mesh.CreateFromBrep(Srfs[i], mp)[0]);
-                return Map_Mesh;
-            }
+            ///// <summary>
+            ///// Shorthand tool for map mesh objects.
+            ///// </summary>
+            ///// <param name="Map_Srf">A NURBS surface to mesh.</param>
+            ///// <param name="Increment">the maximum dimension between vertices.</param>
+            ///// <returns>the map mesh object.</returns>
+            //public static Mesh Create_Map_Mesh(IEnumerable<Brep> Map_Srf, double Increment)
+            //{
+            //    Mesh Map_Mesh = new Mesh();
+            //    MeshingParameters mp = new MeshingParameters();
+            //    mp.MaximumEdgeLength = Increment;
+            //    mp.MinimumEdgeLength = Increment;
+            //    mp.SimplePlanes = false;
+            //    mp.JaggedSeams = false;
+            //    Brep[] Srfs = Map_Srf.ToArray<Brep>();
+            //    for (int i = 0; i < Map_Srf.ToArray<Brep>().Length; i++) Map_Mesh.Append(Mesh.CreateFromBrep(Srfs[i], mp)[0]);
+            //    return Map_Mesh;
+            //}
 
-            /// <summary>
-            /// Sets materials for an object by object.
-            /// </summary>
-            /// <param name="ID">object GUID (UUID)</param>
-            /// <param name="Abs">0 to 100</param>
-            /// <param name="Scat">0 to 100</param>
-            /// <param name="Trans">0 to 100</param>
-            /// <returns></returns>
-            public static bool Material_SetByObject(Guid ID, int[] Abs, int[] Scat, int[] Trans)
-            {
-                Rhino.DocObjects.RhinoObject obj = Rhino.RhinoDoc.ActiveDoc.Objects.Find(ID);
-                obj.Geometry.SetUserString("Acoustics_User", "yes");
-                string MaterialCode = Pachyderm_Acoustic.UI.PachydermAc_PlugIn.EncodeAcoustics(Abs, Scat, Trans);
-                bool result = obj.Geometry.SetUserString("Acoustics", MaterialCode);
-                //Rhino.RhinoDoc.ActiveDoc.Objects.ModifyAttributes(obj, obj.Attributes, true);
-                return result;
-            }
+            ///// <summary>
+            ///// Sets materials for an object by object.
+            ///// </summary>
+            ///// <param name="ID">object GUID (UUID)</param>
+            ///// <param name="Abs">0 to 100</param>
+            ///// <param name="Scat">0 to 100</param>
+            ///// <param name="Trans">0 to 100</param>
+            ///// <returns></returns>
+            //public static bool Material_SetByObject(Guid ID, int[] Abs, int[] Scat, int[] Trans)
+            //{
+            //    Rhino.DocObjects.RhinoObject obj = Rhino.RhinoDoc.ActiveDoc.Objects.Find(ID);
+            //    obj.Geometry.SetUserString("Acoustics_User", "yes");
+            //    string MaterialCode = Pachyderm_Acoustic.UI.PachydermAc_PlugIn.EncodeAcoustics(Abs, Scat, Trans);
+            //    bool result = obj.Geometry.SetUserString("Acoustics", MaterialCode);
+            //    //Rhino.RhinoDoc.ActiveDoc.Objects.ModifyAttributes(obj, obj.Attributes, true);
+            //    return result;
+            //}
             
             /// <summary>
             /// Sets materials for an object by layer.
             /// </summary>
             /// <param name="ID">object GUID (UUID)</param>
             /// <returns></returns>
-            public static bool Material_SetObjectToLayer(Guid ID)
-            {
-                Rhino.DocObjects.RhinoObject obj = Rhino.RhinoDoc.ActiveDoc.Objects.Find(ID);
-                bool result = obj.Geometry.SetUserString("Acoustics_User", "no");
-                Rhino.RhinoDoc.ActiveDoc.Objects.ModifyAttributes(obj, obj.Attributes, true);
-                return result;
-            }
+            //public static bool Material_SetObjectToLayer(Guid ID)
+            //{
+            //    Rhino.DocObjects.RhinoObject obj = Rhino.RhinoDoc.ActiveDoc.Objects.Find(ID);
+            //    bool result = obj.Geometry.SetUserString("Acoustics_User", "no");
+            //    Rhino.RhinoDoc.ActiveDoc.Objects.ModifyAttributes(obj, obj.Attributes, true);
+            //    return result;
+            //}
 
-            /// <summary>
-            /// Sets the material association for a layer. Note that Transparency can not be set for a layer.
-            /// </summary>
-            /// <param name="LayerName"></param>
-            /// <param name="Abs">0 to 100</param>
-            /// <param name="Scat">0 to 100</param>
-            /// <returns></returns>
-            public static bool Material_SetLayer(string LayerName, int[] Abs, int[] Scat)
-            {
-                int layer_index = Rhino.RhinoDoc.ActiveDoc.Layers.Find(LayerName, true);
-                Rhino.DocObjects.Layer layer = Rhino.RhinoDoc.ActiveDoc.Layers[layer_index];
-                layer.SetUserString("Acoustics", Pachyderm_Acoustic.UI.PachydermAc_PlugIn.EncodeAcoustics(Abs, Scat, new int[1]));
-                return Rhino.RhinoDoc.ActiveDoc.Layers.Modify(layer, layer_index, false);
-            }
+            ///// <summary>
+            ///// Sets the material association for a layer. Note that Transparency can not be set for a layer.
+            ///// </summary>
+            ///// <param name="LayerName"></param>
+            ///// <param name="Abs">0 to 100</param>
+            ///// <param name="Scat">0 to 100</param>
+            ///// <returns></returns>
+            //public static bool Material_SetLayer(string LayerName, int[] Abs, int[] Scat)
+            //{
+            //    int layer_index = Rhino.RhinoDoc.ActiveDoc.Layers.Find(LayerName, true);
+            //    Rhino.DocObjects.Layer layer = Rhino.RhinoDoc.ActiveDoc.Layers[layer_index];
+            //    layer.SetUserString("Acoustics", Pachyderm_Acoustic.UI.PachydermAc_PlugIn.EncodeAcoustics(Abs, Scat, new int[1]));
+            //    return Rhino.RhinoDoc.ActiveDoc.Layers.Modify(layer, layer_index, false);
+            //}
 
-            /// <summary>
-            /// Obtain source objects already in model.
-            /// </summary>
-            /// <returns></returns>
-            public static Point3d[] GetSource()
-            {
-                UI.PachydermAc_PlugIn p = UI.PachydermAc_PlugIn.Instance;
-                Point3d[] SPT;
-                p.SourceOrigin(out SPT);
-                return SPT;
-            }
+            ///// <summary>
+            ///// Obtain source objects already in model.
+            ///// </summary>
+            ///// <returns></returns>
+            //public static Point[] GetSource()
+            //{
+            //    UI.PachydermAc_PlugIn p = UI.PachydermAc_PlugIn.Instance;
+            //    Point[] SPT;
+            //    p.SourceOrigin(out SPT);
+            //    return SPT;
+            //}
 
-            /// <summary>
-            /// Obtain source objects already in model.
-            /// </summary>
-            /// <returns></returns>
-            public static Source[] GetSource(int No_of_Rays)
-            {
-                UI.PachydermAc_PlugIn p = UI.PachydermAc_PlugIn.Instance;
-                Source[] Srcs;
-                p.Source(out Srcs);
-                return Srcs;
-            }
+            ///// <summary>
+            ///// Obtain source objects already in model.
+            ///// </summary>
+            ///// <returns></returns>
+            //public static Source[] GetSource(int No_of_Rays)
+            //{
+            //    UI.PachydermAc_PlugIn p = UI.PachydermAc_PlugIn.Instance;
+            //    Source[] Srcs;
+            //    p.Source(out Srcs);
+            //    return Srcs;
+            //}
 
             /// <summary>
             /// Codes a string for the user key "SourcePower"
@@ -2779,9 +2780,9 @@ namespace Pachyderm_Acoustic
             /// <param name="PT"></param>
             /// <param name="PT2"></param>
             /// <returns></returns>
-            public static Point3d AddPTPT(Point3d PT, Point3d PT2)
+            public static Point AddPTPT(Point PT, Point PT2)
             {
-                return new Point3d(PT.X + PT2.X ,PT.Y + PT2.Y,PT.Z + PT2.Z);
+                return new Point(PT.x + PT2.x ,PT.y + PT2.y ,PT.z + PT2.z);
             }
 
             /// <summary>
@@ -2790,9 +2791,20 @@ namespace Pachyderm_Acoustic
             /// <param name="PT"></param>
             /// <param name="PT2"></param>
             /// <returns></returns>
-            public static Point3d AddPTPT(Point3f PT, Point3d PT2)
+            //public static Point AddPTPT(Point PT, Point PT2)
+            //{
+            //    return new Point(PT.x + PT2.x, PT.y + PT2.y, PT.z + PT2.z);
+            //}
+
+            /// <summary>
+            /// Add two points together.
+            /// </summary>
+            /// <param name="PT"></param>
+            /// <param name="PT2"></param>
+            /// <returns></returns>
+            public static Point AddPTPT(Point PT, Vector PT2)
             {
-                return new Point3d(PT.X + PT2.X, PT.Y + PT2.Y, PT.Z + PT2.Z);
+                return new Point(PT.x + PT2.x, PT.y + PT2.y, PT.z + PT2.z);
             }
 
             /// <summary>
@@ -2801,43 +2813,32 @@ namespace Pachyderm_Acoustic
             /// <param name="PT"></param>
             /// <param name="PT2"></param>
             /// <returns></returns>
-            public static Point3d AddPTPT(Point3d PT, Vector3d PT2)
-            {
-                return new Point3d(PT.X + PT2.X, PT.Y + PT2.Y, PT.Z + PT2.Z);
-            }
+            //public static Point AddPTPT(Point PT, Vector PT2)
+            //{
+            //    return new Point(PT.x + PT2.x, PT.y + PT2.y, PT.z + PT2.z);
+            //}
 
             /// <summary>
-            /// Add two points together.
-            /// </summary>
-            /// <param name="PT"></param>
-            /// <param name="PT2"></param>
-            /// <returns></returns>
-            public static Point3d AddPTPT(Point3f PT, Vector3d PT2)
-            {
-                return new Point3d(PT.X + PT2.X, PT.Y + PT2.Y, PT.Z + PT2.Z);
-            }
-
-            /// <summary>
-            /// Convenient Point3d cast.
+            /// Convenient Point cast.
             /// </summary>
             /// <param name="PT"></param>
             /// <returns></returns>
-            public static Point3d castPoint3d(Point3f PT)
-            {
-                return new Point3d(PT.X, PT.Y, PT.Z);
-            }
+            //public static Point castPoint(Point PT)
+            //{
+            //    return new Point(PT.x, PT.y, PT.z);
+            //}
 
             /// <summary>
             /// Obtain receiver objects already in model.
             /// </summary>
             /// <returns></returns>
-            public static List<Point3d> GetReceivers()
-            {
-                UI.PachydermAc_PlugIn p = UI.PachydermAc_PlugIn.Instance;
-                List<Point3d> RPT;
-                p.Receiver(out RPT);
-                return RPT;
-            }
+            //public static List<Point> GetReceivers()
+            //{
+            //    UI.PachydermAc_PlugIn p = UI.PachydermAc_PlugIn.Instance;
+            //    List<Point> RPT;
+            //    p.Receiver(out RPT);
+            //    return RPT;
+            //}
 
             /// <summary>
             /// Easily constructs a receiver bank from custom data. Hard codes sample resolution of simulation to 1000 samples per second.
@@ -2849,7 +2850,7 @@ namespace Pachyderm_Acoustic
             /// <param name="Typ">0 for stationary, 1 for variable.</param>
             /// <param name="Sc">Scene object contains air attenuation, and speed of sound.</param>
             /// <returns></returns>
-            public static List<Receiver_Bank> GetReceivers(IEnumerable<Point3d> ReceiverLocations, IEnumerable<Source> Srcs, int No_of_Rays, int CutOffTime, int Typ, Scene Sc)
+            public static List<Receiver_Bank> GetReceivers(IEnumerable<Point> ReceiverLocations, IEnumerable<Source> Srcs, int No_of_Rays, int CutOffTime, int Typ, Scene Sc)
             {
                 Receiver_Bank.Type RecType;
                 switch (Typ)
@@ -2885,7 +2886,7 @@ namespace Pachyderm_Acoustic
             /// <param name="Typ">0 for stationary, 1 for variable.</param>
             /// <param name="Sc">Scene object contains air attenuation, and speed of sound.</param>
             /// <returns></returns>
-            public static List<Receiver_Bank> GetReceivers(IEnumerable<Point3d> ReceiverLocations, IEnumerable<Source> Srcs, int No_of_Rays, int CutOffTime, int Typ, Scene Sc, int sample_rate)
+            public static List<Receiver_Bank> GetReceivers(IEnumerable<Point> ReceiverLocations, IEnumerable<Source> Srcs, int No_of_Rays, int CutOffTime, int Typ, Scene Sc, int sample_rate)
             {
                 Receiver_Bank.Type RecType;
                 switch (Typ)
@@ -2920,93 +2921,93 @@ namespace Pachyderm_Acoustic
             /// <param name="LBound">the lower bound of the scale.</param>
             /// <param name="UBound">the upper bound of the scale.</param>
             /// <returns>the colored map.</returns>
-            public static string CreateMap(Mesh mesh, int scale_enum, double[] Values, double LBound, double UBound)
-            {
-                double H_OFFSET;
-                double H_BREADTH;
-                double S_OFFSET;
-                double S_BREADTH;
-                double V_OFFSET;
-                double V_BREADTH;
+            //public static string CreateMap(Mesh mesh, int scale_enum, double[] Values, double LBound, double UBound)
+            //{
+            //    double H_OFFSET;
+            //    double H_BREADTH;
+            //    double S_OFFSET;
+            //    double S_BREADTH;
+            //    double V_OFFSET;
+            //    double V_BREADTH;
 
-                if (Values.Length != mesh.Vertices.Count) return System.Guid.Empty.ToString();
+            //    if (Values.Length != mesh.Vertices.Count) return System.Guid.Empty.ToString();
 
-                Pach_Graphics.HSV_colorscale c_scale;
+            //    Pach_Graphics.HSV_colorscale c_scale;
 
-                System.Drawing.Color[] Colors;
-                switch (scale_enum)
-                {
-                    case 0:
-                        H_OFFSET = 0;
-                        H_BREADTH = 4.0 / 3.0;
-                        S_OFFSET = 1;
-                        S_BREADTH = 0;
-                        V_OFFSET = 1;
-                        V_BREADTH = 0;
-                        c_scale = new Pach_Graphics.HSV_colorscale(1,1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 24);
-                        break;
-                    case 1:
-                        Colors = new System.Drawing.Color[2];
-                        H_OFFSET = 0;
-                        H_BREADTH = 1.0 / 3.0;
-                        S_OFFSET = 1;
-                        S_BREADTH = 0;
-                        V_OFFSET = 1;
-                        V_BREADTH = 0;
-                        c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
-                        break;
-                    case 2:
-                        Colors = new System.Drawing.Color[2];
-                        H_OFFSET = Math.PI / 3.0;
-                        H_BREADTH = 1.0 / 3.0;
-                        S_OFFSET = 1;
-                        S_BREADTH = 0;
-                        V_OFFSET = 1;
-                        V_BREADTH = 0;
-                        c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
-                        break;
-                    case 3:
-                        Colors = new System.Drawing.Color[2];
-                        H_OFFSET = 0;
-                        H_BREADTH = -2.0 / 3.0;
-                        S_OFFSET = 1;
-                        S_BREADTH = 0;
-                        V_OFFSET = 1;
-                        V_BREADTH = 0;
-                        c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
-                        break;
-                    case 4:
-                        H_OFFSET = 0;
-                        H_BREADTH = 0;
-                        S_OFFSET = 0;
-                        S_BREADTH = 0;
-                        V_OFFSET = 1;
-                        V_BREADTH = -1;
-                        c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
-                        break;
-                    default:
-                        Rhino.RhinoApp.WriteLine("Whoops... Color selection invalid... Most obnoxious color imaginable substituted!");
-                        Colors = new System.Drawing.Color[2];
-                        H_OFFSET = 2.0 * Math.PI / 3;
-                        H_BREADTH = 0;
-                        S_OFFSET = 1;
-                        S_BREADTH = -1;
-                        V_OFFSET = 1;
-                        V_BREADTH = 0;
-                        c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
-                        break;
-                }
+            //    System.Drawing.Color[] Colors;
+            //    switch (scale_enum)
+            //    {
+            //        case 0:
+            //            H_OFFSET = 0;
+            //            H_BREADTH = 4.0 / 3.0;
+            //            S_OFFSET = 1;
+            //            S_BREADTH = 0;
+            //            V_OFFSET = 1;
+            //            V_BREADTH = 0;
+            //            c_scale = new Pach_Graphics.HSV_colorscale(1,1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 24);
+            //            break;
+            //        case 1:
+            //            Colors = new System.Drawing.Color[2];
+            //            H_OFFSET = 0;
+            //            H_BREADTH = 1.0 / 3.0;
+            //            S_OFFSET = 1;
+            //            S_BREADTH = 0;
+            //            V_OFFSET = 1;
+            //            V_BREADTH = 0;
+            //            c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
+            //            break;
+            //        case 2:
+            //            Colors = new System.Drawing.Color[2];
+            //            H_OFFSET = Math.PI / 3.0;
+            //            H_BREADTH = 1.0 / 3.0;
+            //            S_OFFSET = 1;
+            //            S_BREADTH = 0;
+            //            V_OFFSET = 1;
+            //            V_BREADTH = 0;
+            //            c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
+            //            break;
+            //        case 3:
+            //            Colors = new System.Drawing.Color[2];
+            //            H_OFFSET = 0;
+            //            H_BREADTH = -2.0 / 3.0;
+            //            S_OFFSET = 1;
+            //            S_BREADTH = 0;
+            //            V_OFFSET = 1;
+            //            V_BREADTH = 0;
+            //            c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
+            //            break;
+            //        case 4:
+            //            H_OFFSET = 0;
+            //            H_BREADTH = 0;
+            //            S_OFFSET = 0;
+            //            S_BREADTH = 0;
+            //            V_OFFSET = 1;
+            //            V_BREADTH = -1;
+            //            c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
+            //            break;
+            //        default:
+            //            Rhino.RhinoApp.WriteLine("Whoops... Color selection invalid... Most obnoxious color imaginable substituted!");
+            //            Colors = new System.Drawing.Color[2];
+            //            H_OFFSET = 2.0 * Math.PI / 3;
+            //            H_BREADTH = 0;
+            //            S_OFFSET = 1;
+            //            S_BREADTH = -1;
+            //            V_OFFSET = 1;
+            //            V_BREADTH = 0;
+            //            c_scale = new Pach_Graphics.HSV_colorscale(1, 1, H_OFFSET, H_BREADTH, S_OFFSET, S_BREADTH, V_OFFSET, V_BREADTH, false, 12);
+            //            break;
+            //    }
 
-                double Scale_Breadth = UBound - LBound;
+            //    double Scale_Breadth = UBound - LBound;
 
-                for (int i = 0; i < Values.Length; i++)
-                {
-                    System.Drawing.Color color = c_scale.GetValue(Values[i], LBound, UBound);
-                    mesh.VertexColors.SetColor(i, color);
-                }
+            //    for (int i = 0; i < Values.Length; i++)
+            //    {
+            //        System.Drawing.Color color = c_scale.GetValue(Values[i], LBound, UBound);
+            //        mesh.VertexColors.SetColor(i, color);
+            //    }
                 
-                return Rhino.RhinoDoc.ActiveDoc.Objects.AddMesh(mesh).ToString();
-            }
+            //    return Rhino.RhinoDoc.ActiveDoc.Objects.AddMesh(mesh).ToString();
+            //}
 
             /// <summary>
             /// Adds dataset to the custom mapping control.
@@ -3014,29 +3015,29 @@ namespace Pachyderm_Acoustic
             /// <param name="Title">the alias for the dataset.</param>
             /// <param name="Values">the calculated values for each point.</param>
             /// <param name="M">the mesh to be used.</param>
-            public static void AddToCMControl(string Title, double[] Values, Mesh M)
-            {
-                UI.PachydermAc_PlugIn Pach = UI.PachydermAc_PlugIn.Instance;
-                UI.Pach_MapCustom.Add_Result(Title, Values, M);
-            }
+            //public static void AddToCMControl(string Title, double[] Values, Mesh M)
+            //{
+            //    UI.PachydermAc_PlugIn Pach = UI.PachydermAc_PlugIn.Instance;
+            //    UI.Pach_MapCustom.Add_Result(Title, Values, M);
+            //}
 
-            /// <summary>
-            /// Clears the custom mapping control of all stored data.
-            /// </summary>
-            public static void ClearCMControl()
-            {
-                UI.PachydermAc_PlugIn Pach = UI.PachydermAc_PlugIn.Instance;
-                UI.Pach_MapCustom.Clear();
-            }
+            ///// <summary>
+            ///// Clears the custom mapping control of all stored data.
+            ///// </summary>
+            //public static void ClearCMControl()
+            //{
+            //    UI.PachydermAc_PlugIn Pach = UI.PachydermAc_PlugIn.Instance;
+            //    UI.Pach_MapCustom.Clear();
+            //}
 
             /// <summary>
             /// Casts Rhino point to Hare point
             /// </summary>
             /// <param name="Point"></param>
             /// <returns></returns>
-            public static Hare.Geometry.Point RPttoHPt(Point3d Point)
+            public static Hare.Geometry.Point RPttoHPt(Point Point)
             {
-                return new Hare.Geometry.Point(Point.X, Point.Y, Point.Z);
+                return new Hare.Geometry.Point(Point.x, Point.y, Point.z);
             }
 
             /// <summary>
@@ -3044,18 +3045,18 @@ namespace Pachyderm_Acoustic
             /// </summary>
             /// <param name="Point"></param>
             /// <returns></returns>
-            public static Point3d HPttoRPt(Hare.Geometry.Point Point)
+            public static Point HPttoRPt(Hare.Geometry.Point Point)
             {
-                return new Point3d(Point.x, Point.y, Point.z);
+                return new Point(Point.x, Point.y, Point.z);
             }
 
-            /// <summary>
-            /// Displays custom mapping control.
-            /// </summary>
-            public static void Show_CM_Control()
-            {
-                Rhino.UI.Panels.OpenPanel(new System.Guid("1c48c00e-abd8-40fd-8642-2ce7daa90ed5"));
-            }
+            ///// <summary>
+            ///// Displays custom mapping control.
+            ///// </summary>
+            //public static void Show_CM_Control()
+            //{
+            //    Rhino.UI.Panels.OpenPanel(new System.Guid("1c48c00e-abd8-40fd-8642-2ce7daa90ed5"));
+            //}
 
             public static class Ray_Acoustics 
             {

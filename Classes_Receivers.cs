@@ -16,7 +16,6 @@
 //'License along with Pachyderm-Acoustic; if not, write to the Free Software 
 //'Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 
-using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using Hare.Geometry;
@@ -89,29 +88,29 @@ namespace Pachyderm_Acoustic
             /// <param name="SampleRate_in">the simulation histogram sampling frequency</param>
             /// <param name="COTime_in">the Cut Off Time in ms.</param>
             /// <param name="Type">the type of receivers contained in this receiver bank</param>
-            public Receiver_Bank(IEnumerable<Point3d> Pt, Point3d SrcPT, Scene Sc, int SampleRate_in, double COTime_in, double delayinms, Type Type)
+            public Receiver_Bank(IEnumerable<Point> Pt, Point SrcPT, Scene Sc, int SampleRate_in, double COTime_in, double delayinms, Type Type)
             {
                 delay_ms = delayinms;
                 SampleRate = SampleRate_in;
                 SampleCT = (int)Math.Floor(COTime_in * SampleRate_in / 1000);
                 this.CutOffTime = COTime_in;
                 Rec_Type = Type;
-                Point3d[] arrPts = Pt.ToArray<Point3d>();
+                Point[] arrPts = Pt.ToArray<Point>();
                 Rec_List = new Spherical_Receiver[arrPts.Length];
                 Min = new Hare.Geometry.Point(double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity);
                 Max = new Hare.Geometry.Point(double.NegativeInfinity, double.NegativeInfinity, double.NegativeInfinity);
 
                 for (int i = 0; i < arrPts.Length; i++)
                 {
-                    if (Type == Type.Stationary) Rec_List[i] = new Spherical_Receiver(new Point3d(arrPts[i]), new Point3d(SrcPT), Sc.Attenuation(Utilities.PachTools.RPttoHPt(arrPts[i])), Sc.Sound_speed(Utilities.PachTools.RPttoHPt(arrPts[i])), Sc.Rho(Utilities.PachTools.RPttoHPt(arrPts[i])), SampleRate_in, COTime_in);
-                    if (Type == Type.Variable) Rec_List[i] = new Expanding_Receiver(new Point3d(arrPts[i]), new Point3d(SrcPT), RayCount, Sc.Attenuation(Utilities.PachTools.RPttoHPt(arrPts[i])), Sc.Sound_speed(Utilities.PachTools.RPttoHPt(arrPts[i])), Sc.Rho(Utilities.PachTools.RPttoHPt(arrPts[i])), SampleRate_in, COTime_in);
+                    if (Type == Type.Stationary) Rec_List[i] = new Spherical_Receiver(arrPts[i], SrcPT, Sc.Attenuation(arrPts[i]), Sc.Sound_speed(arrPts[i]), Sc.Rho(arrPts[i]), SampleRate_in, COTime_in);
+                    if (Type == Type.Variable) Rec_List[i] = new Expanding_Receiver(arrPts[i], SrcPT, RayCount, Sc.Attenuation(arrPts[i]), Sc.Sound_speed(arrPts[i]), Sc.Rho(arrPts[i]), SampleRate_in, COTime_in);
 
-                    if (arrPts[i].X > Max.x) Max.x = arrPts[i].X;
-                    if (arrPts[i].Y > Max.y) Max.y = arrPts[i].Y;
-                    if (arrPts[i].Z > Max.z) Max.z = arrPts[i].Z;
-                    if (arrPts[i].X < Min.x) Min.x = arrPts[i].X;
-                    if (arrPts[i].Y < Min.y) Min.y = arrPts[i].Y;
-                    if (arrPts[i].Z < Min.z) Min.z = arrPts[i].Z;
+                    if (arrPts[i].x > Max.x) Max.x = arrPts[i].x;
+                    if (arrPts[i].y > Max.y) Max.y = arrPts[i].y;
+                    if (arrPts[i].z > Max.z) Max.z = arrPts[i].z;
+                    if (arrPts[i].x < Min.x) Min.x = arrPts[i].x;
+                    if (arrPts[i].y < Min.y) Min.y = arrPts[i].y;
+                    if (arrPts[i].z < Min.z) Min.z = arrPts[i].z;
                 }
             }
 
@@ -465,7 +464,7 @@ namespace Pachyderm_Acoustic
             /// </summary>
             /// <param name="ID">the index or 'ID' of a receiver in the bank</param>
             /// <returns>the origin point in Rhino format</returns>
-            public Point3d Origin(int ID)
+            public Point Origin(int ID)
             {
                 return Utilities.PachTools.HPttoRPt(Rec_List[ID].H_Origin);
             }
@@ -480,9 +479,9 @@ namespace Pachyderm_Acoustic
                 return Rec_List[ID].H_Origin;
             }
 
-            public Point3d[] Origins()
+            public Point[] Origins()
             {
-                Point3d[] P = new Point3d[Rec_List.Length];
+                Point[] P = new Point[Rec_List.Length];
                 for (int i = 0; i < Rec_List.Length; i++)
                 {
                     P[i] = Utilities.PachTools.HPttoRPt(Rec_List[i].H_Origin);
@@ -518,8 +517,8 @@ namespace Pachyderm_Acoustic
             /// <returns></returns>
             public static Receiver_Bank operator *(Receiver_Bank A, Receiver_Bank B)
             {
-                Rhino.Geometry.Point3d[] a_pts = A.Origins();
-                Rhino.Geometry.Point3d[] b_pts = B.Origins();
+                Point[] a_pts = A.Origins();
+                Point[] b_pts = B.Origins();
                 if (A.Rec_Type != B.Rec_Type || a_pts.Length != b_pts.Length)
                 {
                     System.Windows.Forms.MessageBox.Show("Data is for two different calculations. Simulations not Combined.");
@@ -562,7 +561,7 @@ namespace Pachyderm_Acoustic
             {
                 for (int rec = 0; rec < Rec_List.Length; rec++)
                 {
-                    Rhino.RhinoApp.SetCommandPrompt(String.Format("Generating Pressure for Receiver {0} of {1}.", rec, Rec_List.Length));
+                    //Rhino.RhinoApp.SetCommandPrompt(String.Format("Generating Pressure for Receiver {0} of {1}.", rec, Rec_List.Length));
                     Rec_List[rec].Create_Pressure();
                 }
             }
@@ -620,14 +619,15 @@ namespace Pachyderm_Acoustic
             /// <param name="C_Sound_in"></param>
             /// <param name="SampleRate_in"></param>
             /// <param name="COTime_in"></param>
-            public Spherical_Receiver(Point3d Center, Point3d SrcCenter, double[] Attenuation, double C_Sound_in, double rho, int SampleRate_in, double COTime_in)
+            public Spherical_Receiver(Point Center, Point SrcCenter, double[] Attenuation, double C_Sound_in, double rho, int SampleRate_in, double COTime_in)
             {
-                D_Length = Center.DistanceTo(SrcCenter);
+                Vector v = Center - SrcCenter;
+                D_Length = Math.Sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
                 Radius = 1;
                 Radius2 = Radius * Radius;
                 SampleRate = SampleRate_in;
                 CO_Time = COTime_in;
-                H_Origin = new Hare.Geometry.Point(Center.X, Center.Y, Center.Z);
+                H_Origin = new Hare.Geometry.Point(Center.x, Center.y, Center.z);
                 Sound_Speed = C_Sound_in;
                 Rho_C = C_Sound_in * rho;
                 Atten = new double[8];
@@ -654,7 +654,7 @@ namespace Pachyderm_Acoustic
                 CO_Time = COTime_in;
                 SampleRate = SampleRate_in;
                 H_Origin = Center;
-                //Origin = new Point3d(Center.x, Center.y, Center.z);
+                //Origin = new Point(Center.x, Center.y, Center.z);
                 Sound_Speed = C_Sound_in;
                 Atten = room.Attenuation(Center);
                 SizeMod = 1 / Math.PI;
@@ -1304,22 +1304,22 @@ namespace Pachyderm_Acoustic
 
                 public override void Create_Pressure(double Rho_C)
                 {
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Omnidirectional..");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Omnidirectional..");
                     P = Audio.Pach_SP.ETCToPTC(this.Energy, this.CO_Time, this.SampleRate, 44100, Rho_C);
                     Pdir = new double[6][];
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Positive X...");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Positive X...");
                     Pdir[0] = Audio.Pach_SP.ETCToPTC(this.Dir_Rec_Pos[0], this.CO_Time, this.SampleRate, 44100, Rho_C);
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Negative X...");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Negative X...");
                     Pdir[1] = Audio.Pach_SP.ETCToPTC(this.Dir_Rec_Neg[0], this.CO_Time, this.SampleRate, 44100, Rho_C);
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Positive Y...");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Positive Y...");
                     Pdir[2] = Audio.Pach_SP.ETCToPTC(this.Dir_Rec_Pos[1], this.CO_Time, this.SampleRate, 44100, Rho_C);
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Negative Y...");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Negative Y...");
                     Pdir[3] = Audio.Pach_SP.ETCToPTC(this.Dir_Rec_Neg[1], this.CO_Time, this.SampleRate, 44100, Rho_C);
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Positive Z...");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Positive Z...");
                     Pdir[4] = Audio.Pach_SP.ETCToPTC(this.Dir_Rec_Pos[2], this.CO_Time, this.SampleRate, 44100, Rho_C);
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Negative Z...");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. Creating Negative Z...");
                     Pdir[5] = Audio.Pach_SP.ETCToPTC(this.Dir_Rec_Neg[2], this.CO_Time, this.SampleRate, 44100, Rho_C);
-                    Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. All Pressure Channels Complete");
+                    //Rhino.RhinoApp.SetCommandPrompt("Generating Pressure for Cardinal directions. All Pressure Channels Complete");
                 }
 
                 /// <summary>
@@ -1346,7 +1346,7 @@ namespace Pachyderm_Acoustic
         {
             int RayCount;
 
-            public Expanding_Receiver(Point3d Point, Point3d SrcPoint, int RCT, double[] Attenuation, double Speed_of_Sound, double rho, int SampleRate, double COTime)
+            public Expanding_Receiver(Point Point, Point SrcPoint, int RCT, double[] Attenuation, double Speed_of_Sound, double rho, int SampleRate, double COTime)
                 : base(Point, SrcPoint, Attenuation, Speed_of_Sound, rho, SampleRate, COTime)
             {
                 RayCount = RCT;

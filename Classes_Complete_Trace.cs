@@ -117,7 +117,7 @@ namespace Pachyderm_Acoustic
         public override void Begin()
         {
             Random Rnd = new Random();
-            _processorCt = UI.PachydermAc_PlugIn.Instance.ProcessorSpec();
+            _processorCt = 4;// UI.PachydermAc_PlugIn.Instance.ProcessorSpec();
             _currentRay = new int[_processorCt];
             _rayTotal = new int[_processorCt];
             _lost = new double[_processorCt];
@@ -390,7 +390,7 @@ namespace Pachyderm_Acoustic
                 RTotal += T;
             }
 
-            Rhino.RhinoApp.WriteLine(String.Format("Energy Lost : {0}%", LTotal * 100 / (RTotal)));
+            //Rhino.RhinoApp.WriteLine(String.Format("Energy Lost : {0}%", LTotal * 100 / (RTotal)));
         }
     }
 }

@@ -16,7 +16,6 @@
 //'License along with Pachyderm-Acoustic; if not, write to the Free Software 
 //'Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 
-using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using Hare.Geometry;
@@ -60,7 +59,8 @@ namespace Pachyderm_Acoustic
         public override void Begin()
         {
             Random Rnd = new Random();
-            processorCT = UI.PachydermAc_PlugIn.Instance.ProcessorSpec();
+            //processorCT = UI.PachydermAc_PlugIn.Instance.ProcessorSpec();
+            processorCT = 4;
             Current_Ray = new int[processorCT];
             Detections = new List<int[]>[Receiver.Count, processorCT];
             SequenceList = new List<int[]>[Receiver.Count];

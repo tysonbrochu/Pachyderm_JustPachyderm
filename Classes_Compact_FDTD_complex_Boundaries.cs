@@ -1066,7 +1066,7 @@ namespace Pachyderm_Acoustic
                                 //Links2[11] = new Null_Node();
                             }
 
-                            Rhino.RhinoApp.WriteLine("Meep");
+                            //Rhino.RhinoApp.WriteLine("Meep");
                             //if (BFlags == Boundary.None) return; else throw new Exception("Node does not fit the strict corner requirements. Raise the node density.");
                             #endregion
                     }

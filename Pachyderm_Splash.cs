@@ -28,9 +28,9 @@ namespace Pachyderm_Acoustic
             public Pach_Splash()
             {
                 InitializeComponent();
-                PachydermAc_PlugIn p = PachydermAc_PlugIn.Instance;
+                //PachydermAc_PlugIn p = PachydermAc_PlugIn.Instance;
                 //Application info 
-                Version_box.Text = string.Format("Version: {0}", p.Version);
+                Version_box.Text = string.Format("Version: {0}", "2.0.0.1");
                 Version_box.ForeColor = System.Drawing.Color.White;
                 title_box.ForeColor = System.Drawing.Color.White;
                 Copyright.ForeColor = System.Drawing.Color.White;

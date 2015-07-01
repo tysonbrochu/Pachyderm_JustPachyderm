@@ -113,7 +113,7 @@ namespace Pachyderm_Acoustic
             Direct_Sound D = new Direct_Sound();
 
             D.Receiver = RecPts.ToList<Hare.Geometry.Point>(); //new Receiver_Bank(RecPts, SrcPt, 343, new double[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 1000, 0, Receiver_Bank.Type.Stationary);
-            int Rec_Ct = D.Receiver.Count;//RecPts.Count<Rhino.Geometry.Point3d>();
+            int Rec_Ct = D.Receiver.Count;//RecPts.Count<Point>();
             D.Rho_C = Rho_C;
             //2. Write strength reference data
             //Pre 2.0, 8 doubles.
@@ -154,7 +154,7 @@ namespace Pachyderm_Acoustic
                     D.Delay_ms = 0;
             }
 
-            D.Src = new GeodesicSource(D.SWL, new double[8]{0,0,0,0,0,0,0,0}, new Rhino.Geometry.Point3d(SrcPt.x, SrcPt.y, SrcPt.z), 0, 0);
+            D.Src = new GeodesicSource(D.SWL, new double[8]{0,0,0,0,0,0,0,0}, new Point(SrcPt.x, SrcPt.y, SrcPt.z), 0, 0);
             D.Validity = new Boolean[RecPts.Count<Hare.Geometry.Point>()];
             D.Time_Pt = new double[RecPts.Count<Hare.Geometry.Point>()];
             D.Io = new double[RecPts.Count<Hare.Geometry.Point>()][,];
@@ -344,16 +344,16 @@ namespace Pachyderm_Acoustic
         /// </summary>
         public void Calculate()
         {
-            if (Src.Type() == "Line Source")
-            { 
-                Line_Calculation();
-            }
-            else if (Src.Type() == "Surface Sound")
-            {
-                Surface_Calculation();
-            }
-            else
-            {
+            //if (Src.Type() == "Line Source")
+            //{ 
+            //    Line_Calculation();
+            //}
+            //else if (Src.Type() == "Surface Sound")
+            //{
+            //    Surface_Calculation();
+            //}
+            //else
+            //{
                 Random rnd = new Random();
                 Validity = new bool[Receiver.Count];
                 Io = new double[Receiver.Count][,];
@@ -372,7 +372,8 @@ namespace Pachyderm_Acoustic
                     Check_Validity(i, rnd.Next(), out transmod);
                     Rho_C[i] = Room.Rho_C(Receiver[i]);
 
-                    double Length = Src.Origin().DistanceTo(Utilities.PachTools.HPttoRPt(Receiver[i]));
+                    Vector v = Src.Origin() - Receiver[i];
+                    double Length = Math.Sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
                     Vector dir = Receiver[i] - Src.H_Origin();
                     dir.Normalize();
 
@@ -405,7 +406,7 @@ namespace Pachyderm_Acoustic
 
                     Time_Pt[i] = Length / C_Sound + Src.Delay;
                 }
-            }
+            //}
         }
 
         public double[] Dir_Pressure(int Rec_ID, double alt, double azi, bool degrees)
@@ -613,14 +614,14 @@ namespace Pachyderm_Acoustic
             return E;
         }
 
-        public Rhino.Geometry.Point3d Src_Origin
+        public Point Src_Origin
         {
             get 
             {
                 return Src.Origin();
             }
         }
-        public IEnumerable<Rhino.Geometry.Point3d> Rec_Origin
+        public IEnumerable<Point> Rec_Origin
         {
             get
             {
@@ -649,9 +650,9 @@ namespace Pachyderm_Acoustic
             }
         }
 
-        public static Rhino.Geometry.Point3d[] Origins(Direct_Sound[] D)
+        public static Point[] Origins(Direct_Sound[] D)
         {
-            System.Collections.Generic.List<Rhino.Geometry.Point3d> Orig = new System.Collections.Generic.List<Rhino.Geometry.Point3d>();
+            System.Collections.Generic.List<Point> Orig = new System.Collections.Generic.List<Point>();
             foreach (Direct_Sound Dir in D)
             {
                 Orig.Add(Dir.Src_Origin);
@@ -811,10 +812,10 @@ namespace Pachyderm_Acoustic
         ///// <returns></returns>
         //public static Direct_Sound operator *(Direct_Sound A, Direct_Sound B)
         //{
-        //    List<Rhino.Geometry.Point3d> ARec = A.Rec_Origin.ToList<Rhino.Geometry.Point3d>();
-        //    List<Rhino.Geometry.Point3d> BRec = A.Rec_Origin.ToList<Rhino.Geometry.Point3d>();
+        //    List<Point> ARec = A.Rec_Origin.ToList<Point>();
+        //    List<Point> BRec = A.Rec_Origin.ToList<Point>();
 
-        //    if (A.Src_Origin.GetHashCode() != B.Src_Origin.GetHashCode() || ARec.Count<Rhino.Geometry.Point3d>() != BRec.Count<Rhino.Geometry.Point3d>()) 
+        //    if (A.Src_Origin.GetHashCode() != B.Src_Origin.GetHashCode() || ARec.Count<Point>() != BRec.Count<Point>()) 
         //    {
         //        System.Windows.Forms.MessageBox.Show("Data is for two different calculations. Simulations not Combined.");
         //        return null;
@@ -874,7 +875,7 @@ namespace Pachyderm_Acoustic
                 for (int j = 0; j < 6; j++) Pdir[i][j] = new double[ETC[0].Length + 8192];
                 for (int t = 0; t < ETC[0].Length; t++)
                 {
-                    Rhino.RhinoApp.CommandPrompt = string.Format("Creating direct sound pressure for receiver {0}. {1}% complete, ", i, Math.Round((double)t / ETC[0].Length * 100));
+                    //Rhino.RhinoApp.CommandPrompt = string.Format("Creating direct sound pressure for receiver {0}. {1}% complete, ", i, Math.Round((double)t / ETC[0].Length * 100));
                     double[] Pmin = Audio.Pach_SP.Linear_Phase_Signal(new double[8] { ETC[0][0], ETC[1][0], ETC[2][0], ETC[3][0], ETC[4][0], ETC[5][0], ETC[6][0], ETC[7][0] }, 44100, 8192, 0);
                     //Audio.Pach_SP.Raised_Cosine_Window(ref Pmin);
                     for (int u = 0; u < Pmin.Length; u++)
@@ -910,462 +911,462 @@ namespace Pachyderm_Acoustic
             }
         }
 
-        private bool Line_Calculation()
-        {
-            LineSource LSrc = Src as LineSource;
+        //private bool Line_Calculation()
+        //{
+        //    LineSource LSrc = Src as LineSource;
 
-            //Homogeneous media only...
-            List<Hare.Geometry.Point> R = new List<Hare.Geometry.Point>();
-            foreach (Hare.Geometry.Point p in Receiver) R.Add(p);
-            bool[][][] Valid = new bool[R.Count][][];
+        //    //Homogeneous media only...
+        //    List<Hare.Geometry.Point> R = new List<Hare.Geometry.Point>();
+        //    foreach (Hare.Geometry.Point p in Receiver) R.Add(p);
+        //    bool[][][] Valid = new bool[R.Count][][];
 
-            double[][][] tau = new double[R.Count][][]; //Rec;Curve;Sample
-            double[][][] dist = new double[R.Count][][]; //Rec;Curve;Sample
-            int[] RecT = new int[R.Count];
-            Io = new double[R.Count][,];
-            //P = new double[R.Count][,];
-            Dir_Rec_Pos = new float[R.Count][, ,];
-            Dir_Rec_Neg = new float[R.Count][, ,];
-            Vector[][][] dir = new Vector[R.Count][][];
-            double[][][][] tmod = new double[R.Count][][][];
-            ///////////////
-            double[][][] d_mod = new double[R.Count][][];
-            ///////////////
-            List<int>[][] Inflection = new List<int>[R.Count][];
-            Validity = new Boolean[R.Count];
+        //    double[][][] tau = new double[R.Count][][]; //Rec;Curve;Sample
+        //    double[][][] dist = new double[R.Count][][]; //Rec;Curve;Sample
+        //    int[] RecT = new int[R.Count];
+        //    Io = new double[R.Count][,];
+        //    //P = new double[R.Count][,];
+        //    Dir_Rec_Pos = new float[R.Count][, ,];
+        //    Dir_Rec_Neg = new float[R.Count][, ,];
+        //    Vector[][][] dir = new Vector[R.Count][][];
+        //    double[][][][] tmod = new double[R.Count][][][];
+        //    ///////////////
+        //    double[][][] d_mod = new double[R.Count][][];
+        //    ///////////////
+        //    List<int>[][] Inflection = new List<int>[R.Count][];
+        //    Validity = new Boolean[R.Count];
 
-            double C_Sound = Room.Sound_speed(0);
+        //    double C_Sound = Room.Sound_speed(0);
 
-            Random rnd = new Random();
-            List<int> rand_list = new List<int>();
-            for (int i = 0; i < R.Count; i++)
-            {
-                rand_list.Add(rnd.Next());
-            }
+        //    Random rnd = new Random();
+        //    List<int> rand_list = new List<int>();
+        //    for (int i = 0; i < R.Count; i++)
+        //    {
+        //        rand_list.Add(rnd.Next());
+        //    }
 
-            System.Threading.Semaphore S = new System.Threading.Semaphore(1, 1);
+        //    System.Threading.Semaphore S = new System.Threading.Semaphore(1, 1);
 
-            System.Threading.Tasks.Parallel.For(0, R.Count, rec_id =>
-            {
-                Inflection[rec_id] = new List<int>[LSrc.Curves.Count];
-                Valid[rec_id] = new bool[LSrc.Curves.Count][];
-                Random RndGen = new Random(rand_list[rec_id]);
-                tau[rec_id] = new double[LSrc.Curves.Count][];
-                dist[rec_id] = new double[LSrc.Curves.Count][];
-                tmod[rec_id] = new double[LSrc.Curves.Count][][];
-                dir[rec_id] = new Vector[LSrc.Curves.Count][];
-                ///////////////
-                d_mod[rec_id] = new double[LSrc.Curves.Count][];
-                ///////////////
-                for (int i = 0; i < LSrc.Curves.Count; i++)
-                {
-                    Inflection[rec_id][i] = new List<int>();
-                    Valid[rec_id][i] = new bool[LSrc.Samples[i].Length];
-                    tau[rec_id][i] = new double[LSrc.Samples[i].Length];
-                    dist[rec_id][i] = new double[LSrc.Samples[i].Length];
-                    Time_Pt[rec_id] = double.MaxValue;
-                    tmod[rec_id][i] = new double[LSrc.Samples[i].Length][];
-                    dir[rec_id][i] = new Vector[LSrc.Samples[i].Length];
-                    ///////////////
-                    d_mod[rec_id][i] = new double[LSrc.Samples[i].Length];
-                    ///////////////
+        //    System.Threading.Tasks.Parallel.For(0, R.Count, rec_id =>
+        //    {
+        //        Inflection[rec_id] = new List<int>[LSrc.Curves.Count];
+        //        Valid[rec_id] = new bool[LSrc.Curves.Count][];
+        //        Random RndGen = new Random(rand_list[rec_id]);
+        //        tau[rec_id] = new double[LSrc.Curves.Count][];
+        //        dist[rec_id] = new double[LSrc.Curves.Count][];
+        //        tmod[rec_id] = new double[LSrc.Curves.Count][][];
+        //        dir[rec_id] = new Vector[LSrc.Curves.Count][];
+        //        ///////////////
+        //        d_mod[rec_id] = new double[LSrc.Curves.Count][];
+        //        ///////////////
+        //        for (int i = 0; i < LSrc.Curves.Count; i++)
+        //        {
+        //            Inflection[rec_id][i] = new List<int>();
+        //            Valid[rec_id][i] = new bool[LSrc.Samples[i].Length];
+        //            tau[rec_id][i] = new double[LSrc.Samples[i].Length];
+        //            dist[rec_id][i] = new double[LSrc.Samples[i].Length];
+        //            Time_Pt[rec_id] = double.MaxValue;
+        //            tmod[rec_id][i] = new double[LSrc.Samples[i].Length][];
+        //            dir[rec_id][i] = new Vector[LSrc.Samples[i].Length];
+        //            ///////////////
+        //            d_mod[rec_id][i] = new double[LSrc.Samples[i].Length];
+        //            ///////////////
 
-                    double d1 = (R[rec_id] - Utilities.PachTools.RPttoHPt(LSrc.Samples[i][0])).Length(), d2 = (R[rec_id] - Utilities.PachTools.RPttoHPt(LSrc.Samples[i][1])).Length();
-                    int t_peak = (d1 - d2) < 0 ? 1 : -1;
+        //            double d1 = (R[rec_id] - Utilities.PachTools.RPttoHPt(LSrc.Samples[i][0])).Length(), d2 = (R[rec_id] - Utilities.PachTools.RPttoHPt(LSrc.Samples[i][1])).Length();
+        //            int t_peak = (d1 - d2) < 0 ? 1 : -1;
 
-                    for (int j = 0; j < LSrc.Samples[i].Length; j++)
-                    {
-                        tmod[rec_id][i][j] = new double[8];
-                        tmod[rec_id][i][j][0] = 1;
-                        tmod[rec_id][i][j][1] = 1;
-                        tmod[rec_id][i][j][2] = 1;
-                        tmod[rec_id][i][j][3] = 1;
-                        tmod[rec_id][i][j][4] = 1;
-                        tmod[rec_id][i][j][5] = 1;
-                        tmod[rec_id][i][j][6] = 1;
-                        tmod[rec_id][i][j][7] = 1;
+        //            for (int j = 0; j < LSrc.Samples[i].Length; j++)
+        //            {
+        //                tmod[rec_id][i][j] = new double[8];
+        //                tmod[rec_id][i][j][0] = 1;
+        //                tmod[rec_id][i][j][1] = 1;
+        //                tmod[rec_id][i][j][2] = 1;
+        //                tmod[rec_id][i][j][3] = 1;
+        //                tmod[rec_id][i][j][4] = 1;
+        //                tmod[rec_id][i][j][5] = 1;
+        //                tmod[rec_id][i][j][6] = 1;
+        //                tmod[rec_id][i][j][7] = 1;
 
-                        Rhino.Geometry.Point3d p = LSrc.Samples[i][j];
-                        dir[rec_id][i][j] = R[rec_id] - Utilities.PachTools.RPttoHPt(LSrc.Samples[i][j]);
-                        dist[rec_id][i][j] = dir[rec_id][i][j].Length();
-                        double tdbl = dist[rec_id][i][j] / C_Sound;
-                        tau[rec_id][i][j] = tdbl * SampleFreq;
-                        if (RecT[rec_id] < tau[rec_id][i][j]) RecT[rec_id] = (int)tau[rec_id][i][j];
-                        if (Time_Pt[rec_id] > tdbl) Time_Pt[rec_id] = tdbl;
-                        dir[rec_id][i][j].Normalize();
+        //                Point p = LSrc.Samples[i][j];
+        //                dir[rec_id][i][j] = R[rec_id] - Utilities.PachTools.RPttoHPt(LSrc.Samples[i][j]);
+        //                dist[rec_id][i][j] = dir[rec_id][i][j].Length();
+        //                double tdbl = dist[rec_id][i][j] / C_Sound;
+        //                tau[rec_id][i][j] = tdbl * SampleFreq;
+        //                if (RecT[rec_id] < tau[rec_id][i][j]) RecT[rec_id] = (int)tau[rec_id][i][j];
+        //                if (Time_Pt[rec_id] > tdbl) Time_Pt[rec_id] = tdbl;
+        //                dir[rec_id][i][j].Normalize();
 
-                        ////////////////////
-                        double tanpt;
-                        LSrc.Curves[i].ClosestPoint(LSrc.Samples[i][j], out tanpt);
-                        d_mod[rec_id][i][j] = Hare_math.Dot(dir[rec_id][i][j], Utilities.PachTools.RPttoHPt((Rhino.Geometry.Point3d)LSrc.Curves[i].TangentAt(tanpt)));
-                        d_mod[rec_id][i][j] = Math.Sqrt(1 - d_mod[rec_id][i][j] * d_mod[rec_id][i][j]);
-                        ////////////////////
+        //                ////////////////////
+        //                double tanpt;
+        //                LSrc.Curves[i].ClosestPoint(LSrc.Samples[i][j], out tanpt);
+        //                d_mod[rec_id][i][j] = Hare_math.Dot(dir[rec_id][i][j], Utilities.PachTools.RPttoHPt((Point)LSrc.Curves[i].TangentAt(tanpt)));
+        //                d_mod[rec_id][i][j] = Math.Sqrt(1 - d_mod[rec_id][i][j] * d_mod[rec_id][i][j]);
+        //                ////////////////////
 
-                        if (j != 0)
-                        {
-                            ///Check for inflection...
-                            if (((dist[rec_id][i][j] - dist[rec_id][i][j - 1]) < 0) != (t_peak < 0))
-                            {
-                                if (j != 1) Inflection[rec_id][i].Add(j);
-                                t_peak *= -1;
-                            }
-                        }
-
-
-                        Ray D = new Ray(Utilities.PachTools.RPttoHPt(p), dir[rec_id][i][j], 0, RndGen.Next());
-                        double x1 = 0, x2 = 0;
-                        List<double> t_in;
-                        List<int> code;
-                        int x3 = 0;
-                        List<Hare.Geometry.Point> x4;
-                        do
-                        {
-                            double t = 0;
-                            if (Room.shoot(D, out x1, out x2, out x3, out x4, out t_in, out code))
-                            {
-                                //Point is behind receiver...
-                                if (t_in[0] >= dist[rec_id][i][j])
-                                {
-                                    //Clear connection.
-                                    Valid[rec_id][i][j] = true;
-                                    break;
-                                }
-                                else if (Room.IsTransmissive[x3])
-                                {
-                                    //Semi-transparent veil is in between source and receiver...
-                                    t += t_in[0];
-                                    D.origin = x4[0];
-                                    tmod[rec_id][i][j][0] *= Room.TransmissionValue[x3][0];
-                                    tmod[rec_id][i][j][1] *= Room.TransmissionValue[x3][1];
-                                    tmod[rec_id][i][j][2] *= Room.TransmissionValue[x3][2];
-                                    tmod[rec_id][i][j][3] *= Room.TransmissionValue[x3][3];
-                                    tmod[rec_id][i][j][4] *= Room.TransmissionValue[x3][4];
-                                    tmod[rec_id][i][j][5] *= Room.TransmissionValue[x3][5];
-                                    tmod[rec_id][i][j][6] *= Room.TransmissionValue[x3][6];
-                                    tmod[rec_id][i][j][7] *= Room.TransmissionValue[x3][7];
-                                    continue;
-                                }
-                                else
-                                {
-                                    //obstructed connection.
-                                    Valid[rec_id][i][j] = false;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                Valid[rec_id][i][j] = true;
-                                break;
-                            }
-                        }
-                        while (true);
-                    }
-                }
-
-                S.WaitOne();
-                Special_Status.Instance.progress += 1.0f / R.Count;
-                S.Release();
-            });
-
-            for (int rec_id = 0; rec_id < R.Count; rec_id++)
-            {
-                Validity[rec_id] = false;
-                Io[rec_id] = new double[RecT[rec_id] + 1, 8];
-                //P[rec_id] = new double[RecT[rec_id] + 1, 8];
-                Dir_Rec_Pos[rec_id] = new float[8, RecT[rec_id] + 1, 3];
-                Dir_Rec_Neg[rec_id] = new float[8, RecT[rec_id] + 1, 3];
-
-                List<MathNet.Numerics.Interpolation.IInterpolation>[][] I_Curve = new List<MathNet.Numerics.Interpolation.IInterpolation>[LSrc.Curves.Count][]; //[Curve][Octave]
-                List<double[]>[] Intervals = new List<double[]>[LSrc.Curves.Count];
-                double[] Intval;
-
-                for (int i = 0; i < LSrc.Curves.Count; i++)
-                {
-                    Intval = new double[2] { tau[rec_id][i][0], 0 };
-                    I_Curve[i] = new List<MathNet.Numerics.Interpolation.IInterpolation>[8];
-                    List<double>[] Io_temp = new List<double>[8];
-                    for (int oct = 0; oct < 8; oct++) I_Curve[i][oct] = new List<MathNet.Numerics.Interpolation.IInterpolation>();
-                    for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
-                    List<double> t = new List<double>();
-                    int start = (int)Math.Floor(Time_Pt[rec_id] * SampleFreq);
-                    int C_id = 0;
-                    Intervals[i] = new List<double[]>();
-
-                    for (int j = 0; j < tau[rec_id][i].Length; j++)
-                    {
-                        Validity[rec_id] |= Valid[rec_id][i][j];
-                        if (!Valid[rec_id][i][j])
-                        {
-                            if (t.Count == 0)
-                            {
-                                Intval = new double[2] { tau[rec_id][i][j], 0 };
-                                continue;
-                            }
-                            //Build Spline
-                            if (t.Count < 5)
-                            {
-                                if (t.Count == 1) { t = new List<double> { (tau[rec_id][i][j - 1] + tau[rec_id][i][j]) / 2, (tau[rec_id][i][j] + tau[rec_id][i][j + 1]) / 2 }; }
-                                else { t.Add((tau[rec_id][i][j] + tau[rec_id][i][j + 1]) / 2); }
-
-                                Io_temp[0].Add(Io_temp[0][0]);
-                                Io_temp[1].Add(Io_temp[1][0]);
-                                Io_temp[2].Add(Io_temp[2][0]);
-                                Io_temp[3].Add(Io_temp[3][0]);
-                                Io_temp[4].Add(Io_temp[4][0]);
-                                Io_temp[5].Add(Io_temp[5][0]);
-                                Io_temp[6].Add(Io_temp[6][0]);
-                                Io_temp[7].Add(Io_temp[7][0]);
-                                for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.LinearSpline.Interpolate(t, Io_temp[oct]));
-                            }
-                            else
-                            {
-                                for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
-                            }
-                            //Reset Spline Template
-                            for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
-                            t = new List<double>();
-                            Intval[1] = tau[rec_id][i][j];
-                            Intervals[i].Add(Intval);
-                            Intval = new double[2] { tau[rec_id][i][j], 0 };
-                            continue;
-                        }
-                        else if (C_id < Inflection[rec_id][i].Count && Inflection[rec_id][i][C_id] == j)
-                        {
-                            C_id++;
-                            if (t.Count > 0 && t.Count > 4)
-                            {
-                                for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
-                                for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
-                                t = new List<double>();
-                                Intval[1] = tau[rec_id][i][j];
-                                Intervals[i].Add(Intval);
-                                Intval = new double[2] { tau[rec_id][i][j], 0 };
-                            }
-                        }
-
-                        ///Tributary length in samples - divide the energy of the line element up among the samples interpolation will produce...
-                        double trib = 0;
+        //                if (j != 0)
+        //                {
+        //                    ///Check for inflection...
+        //                    if (((dist[rec_id][i][j] - dist[rec_id][i][j - 1]) < 0) != (t_peak < 0))
+        //                    {
+        //                        if (j != 1) Inflection[rec_id][i].Add(j);
+        //                        t_peak *= -1;
+        //                    }
+        //                }
 
 
-                        if (j > 0)
-                        {
-                            trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j - 1]) / 2;
-                        }
-                        else trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j + 1]) / 2;
-                        if (j < tau[rec_id][i].Length - 1)
-                        {
-                            trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j + 1]) / 2;
-                        }
-                        else trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j - 1]) / 2;
+        //                Ray D = new Ray(Utilities.PachTools.RPttoHPt(p), dir[rec_id][i][j], 0, RndGen.Next());
+        //                double x1 = 0, x2 = 0;
+        //                List<double> t_in;
+        //                List<int> code;
+        //                int x3 = 0;
+        //                List<Hare.Geometry.Point> x4;
+        //                do
+        //                {
+        //                    double t = 0;
+        //                    if (Room.shoot(D, out x1, out x2, out x3, out x4, out t_in, out code))
+        //                    {
+        //                        //Point is behind receiver...
+        //                        if (t_in[0] >= dist[rec_id][i][j])
+        //                        {
+        //                            //Clear connection.
+        //                            Valid[rec_id][i][j] = true;
+        //                            break;
+        //                        }
+        //                        else if (Room.IsTransmissive[x3])
+        //                        {
+        //                            //Semi-transparent veil is in between source and receiver...
+        //                            t += t_in[0];
+        //                            D.origin = x4[0];
+        //                            tmod[rec_id][i][j][0] *= Room.TransmissionValue[x3][0];
+        //                            tmod[rec_id][i][j][1] *= Room.TransmissionValue[x3][1];
+        //                            tmod[rec_id][i][j][2] *= Room.TransmissionValue[x3][2];
+        //                            tmod[rec_id][i][j][3] *= Room.TransmissionValue[x3][3];
+        //                            tmod[rec_id][i][j][4] *= Room.TransmissionValue[x3][4];
+        //                            tmod[rec_id][i][j][5] *= Room.TransmissionValue[x3][5];
+        //                            tmod[rec_id][i][j][6] *= Room.TransmissionValue[x3][6];
+        //                            tmod[rec_id][i][j][7] *= Room.TransmissionValue[x3][7];
+        //                            continue;
+        //                        }
+        //                        else
+        //                        {
+        //                            //obstructed connection.
+        //                            Valid[rec_id][i][j] = false;
+        //                            break;
+        //                        }
+        //                    }
+        //                    else
+        //                    {
+        //                        Valid[rec_id][i][j] = true;
+        //                        break;
+        //                    }
+        //                }
+        //                while (true);
+        //            }
+        //        }
 
-                        if (trib < 1) trib = 1;
-                        //trib = C_Sound * tau[rec_id][i][j] * d_mod[rec_id][i][j] / 1000;
+        //        S.WaitOne();
+        //        Special_Status.Instance.progress += 1.0f / R.Count;
+        //        S.Release();
+        //    });
 
-                        //TODO: Need to know start and end times for each of these...
-                        double[] Io_t = new double[8];
-                        Io_t[0] = LSrc.DomainPower[i][0] * Math.Pow(10,-.1 * Room.Attenuation(0)[0] * dist[rec_id][i][j]) * tmod[rec_id][i][j][0] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
-                        Io_t[1] = LSrc.DomainPower[i][1] * Math.Pow(10,-.1 * Room.Attenuation(0)[1] * dist[rec_id][i][j]) * tmod[rec_id][i][j][1] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
-                        Io_t[2] = LSrc.DomainPower[i][2] * Math.Pow(10,-.1 * Room.Attenuation(0)[2] * dist[rec_id][i][j]) * tmod[rec_id][i][j][2] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
-                        Io_t[3] = LSrc.DomainPower[i][3] * Math.Pow(10,-.1 * Room.Attenuation(0)[3] * dist[rec_id][i][j]) * tmod[rec_id][i][j][3] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
-                        Io_t[4] = LSrc.DomainPower[i][4] * Math.Pow(10,-.1 * Room.Attenuation(0)[4] * dist[rec_id][i][j]) * tmod[rec_id][i][j][4] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
-                        Io_t[5] = LSrc.DomainPower[i][5] * Math.Pow(10,-.1 * Room.Attenuation(0)[5] * dist[rec_id][i][j]) * tmod[rec_id][i][j][5] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
-                        Io_t[6] = LSrc.DomainPower[i][6] * Math.Pow(10,-.1 * Room.Attenuation(0)[6] * dist[rec_id][i][j]) * tmod[rec_id][i][j][6] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
-                        Io_t[7] = LSrc.DomainPower[i][7] * Math.Pow(10,-.1 * Room.Attenuation(0)[7] * dist[rec_id][i][j]) * tmod[rec_id][i][j][7] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //    for (int rec_id = 0; rec_id < R.Count; rec_id++)
+        //    {
+        //        Validity[rec_id] = false;
+        //        Io[rec_id] = new double[RecT[rec_id] + 1, 8];
+        //        //P[rec_id] = new double[RecT[rec_id] + 1, 8];
+        //        Dir_Rec_Pos[rec_id] = new float[8, RecT[rec_id] + 1, 3];
+        //        Dir_Rec_Neg[rec_id] = new float[8, RecT[rec_id] + 1, 3];
 
-                        bool isgood = true;
-                        for (int oct = 0; oct < 8; oct++)
-                        {
-                            isgood &= !(double.IsInfinity(Io_t[oct]) || double.IsNaN(Io_t[oct]));
-                        }
+        //        List<MathNet.Numerics.Interpolation.IInterpolation>[][] I_Curve = new List<MathNet.Numerics.Interpolation.IInterpolation>[LSrc.Curves.Count][]; //[Curve][Octave]
+        //        List<double[]>[] Intervals = new List<double[]>[LSrc.Curves.Count];
+        //        double[] Intval;
 
-                        if (!isgood) continue;
+        //        for (int i = 0; i < LSrc.Curves.Count; i++)
+        //        {
+        //            Intval = new double[2] { tau[rec_id][i][0], 0 };
+        //            I_Curve[i] = new List<MathNet.Numerics.Interpolation.IInterpolation>[8];
+        //            List<double>[] Io_temp = new List<double>[8];
+        //            for (int oct = 0; oct < 8; oct++) I_Curve[i][oct] = new List<MathNet.Numerics.Interpolation.IInterpolation>();
+        //            for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
+        //            List<double> t = new List<double>();
+        //            int start = (int)Math.Floor(Time_Pt[rec_id] * SampleFreq);
+        //            int C_id = 0;
+        //            Intervals[i] = new List<double[]>();
 
-                        for (int oct = 0; oct < 8; oct++) Io_temp[oct].Add(Io_t[oct]);
-                        t.Add(tau[rec_id][i][j]);
-                    }
+        //            for (int j = 0; j < tau[rec_id][i].Length; j++)
+        //            {
+        //                Validity[rec_id] |= Valid[rec_id][i][j];
+        //                if (!Valid[rec_id][i][j])
+        //                {
+        //                    if (t.Count == 0)
+        //                    {
+        //                        Intval = new double[2] { tau[rec_id][i][j], 0 };
+        //                        continue;
+        //                    }
+        //                    //Build Spline
+        //                    if (t.Count < 5)
+        //                    {
+        //                        if (t.Count == 1) { t = new List<double> { (tau[rec_id][i][j - 1] + tau[rec_id][i][j]) / 2, (tau[rec_id][i][j] + tau[rec_id][i][j + 1]) / 2 }; }
+        //                        else { t.Add((tau[rec_id][i][j] + tau[rec_id][i][j + 1]) / 2); }
 
-                    if (t.Count < 5) continue;
-                    for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
-                    Intval[1] = tau[rec_id][i][tau[rec_id][i].Length - 1];
-                    Intervals[i].Add(Intval);
-                }
+        //                        Io_temp[0].Add(Io_temp[0][0]);
+        //                        Io_temp[1].Add(Io_temp[1][0]);
+        //                        Io_temp[2].Add(Io_temp[2][0]);
+        //                        Io_temp[3].Add(Io_temp[3][0]);
+        //                        Io_temp[4].Add(Io_temp[4][0]);
+        //                        Io_temp[5].Add(Io_temp[5][0]);
+        //                        Io_temp[6].Add(Io_temp[6][0]);
+        //                        Io_temp[7].Add(Io_temp[7][0]);
+        //                        for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.LinearSpline.Interpolate(t, Io_temp[oct]));
+        //                    }
+        //                    else
+        //                    {
+        //                        for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
+        //                    }
+        //                    //Reset Spline Template
+        //                    for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
+        //                    t = new List<double>();
+        //                    Intval[1] = tau[rec_id][i][j];
+        //                    Intervals[i].Add(Intval);
+        //                    Intval = new double[2] { tau[rec_id][i][j], 0 };
+        //                    continue;
+        //                }
+        //                else if (C_id < Inflection[rec_id][i].Count && Inflection[rec_id][i][C_id] == j)
+        //                {
+        //                    C_id++;
+        //                    if (t.Count > 0 && t.Count > 4)
+        //                    {
+        //                        for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
+        //                        for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
+        //                        t = new List<double>();
+        //                        Intval[1] = tau[rec_id][i][j];
+        //                        Intervals[i].Add(Intval);
+        //                        Intval = new double[2] { tau[rec_id][i][j], 0 };
+        //                    }
+        //                }
 
-                //TODO: Splines built... build interpolated curves.
-                for (int i = 0; i < LSrc.Curves.Count; i++)
-                {
-                    int start = (int)Math.Floor(Time_Pt[rec_id] * SampleFreq);
-                    //TODO: Need to know start and end times for each of these...
-                    if (I_Curve[i][0].Count != Intervals[i].Count) throw new Exception("Curves and intervals mismatch...");
+        //                ///Tributary length in samples - divide the energy of the line element up among the samples interpolation will produce...
+        //                double trib = 0;
 
-                    for (int j = 0; j < Intervals[i].Count; j++)
-                    {
-                        int intvallength = (int)Math.Floor(Intervals[i][j][1] - Intervals[i][j][0]);
-                        int dt_mod = intvallength < 0 ? -1 : 1;
-                        intvallength *= dt_mod;
 
-                        for (int t_ = 0; t_ < intvallength; t_++)
-                        {
-                            int time = (int)Math.Floor(Intervals[i][j][0] + dt_mod * t_);
+        //                if (j > 0)
+        //                {
+        //                    trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j - 1]) / 2;
+        //                }
+        //                else trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j + 1]) / 2;
+        //                if (j < tau[rec_id][i].Length - 1)
+        //                {
+        //                    trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j + 1]) / 2;
+        //                }
+        //                else trib += Math.Abs(tau[rec_id][i][j] - tau[rec_id][i][j - 1]) / 2;
 
-                            int t = time - start;
+        //                if (trib < 1) trib = 1;
+        //                //trib = C_Sound * tau[rec_id][i][j] * d_mod[rec_id][i][j] / 1000;
 
-                            double[] Io_temp = new double[8];
-                            for (int oct = 0; oct < 8; oct++)
-                            {
-                                Io_temp[oct] = I_Curve[i][oct][j].Interpolate((double)time);
-                            }
-                            for (int oct = 0; oct < 8; oct++) if (!(double.IsInfinity(Io_temp[oct]) || double.IsNaN(Io_temp[oct]))) Io[rec_id][t, oct] += Io_temp[oct];
+        //                //TODO: Need to know start and end times for each of these...
+        //                double[] Io_t = new double[8];
+        //                Io_t[0] = LSrc.DomainPower[i][0] * Math.Pow(10,-.1 * Room.Attenuation(0)[0] * dist[rec_id][i][j]) * tmod[rec_id][i][j][0] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //                Io_t[1] = LSrc.DomainPower[i][1] * Math.Pow(10,-.1 * Room.Attenuation(0)[1] * dist[rec_id][i][j]) * tmod[rec_id][i][j][1] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //                Io_t[2] = LSrc.DomainPower[i][2] * Math.Pow(10,-.1 * Room.Attenuation(0)[2] * dist[rec_id][i][j]) * tmod[rec_id][i][j][2] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //                Io_t[3] = LSrc.DomainPower[i][3] * Math.Pow(10,-.1 * Room.Attenuation(0)[3] * dist[rec_id][i][j]) * tmod[rec_id][i][j][3] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //                Io_t[4] = LSrc.DomainPower[i][4] * Math.Pow(10,-.1 * Room.Attenuation(0)[4] * dist[rec_id][i][j]) * tmod[rec_id][i][j][4] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //                Io_t[5] = LSrc.DomainPower[i][5] * Math.Pow(10,-.1 * Room.Attenuation(0)[5] * dist[rec_id][i][j]) * tmod[rec_id][i][j][5] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //                Io_t[6] = LSrc.DomainPower[i][6] * Math.Pow(10,-.1 * Room.Attenuation(0)[6] * dist[rec_id][i][j]) * tmod[rec_id][i][j][6] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
+        //                Io_t[7] = LSrc.DomainPower[i][7] * Math.Pow(10,-.1 * Room.Attenuation(0)[7] * dist[rec_id][i][j]) * tmod[rec_id][i][j][7] / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j] * trib);
 
-                            for (int oct = 0; oct < 8; oct++)
-                            {
-                                if (Io_temp[oct] == 0) continue;
-                                Vector V = dir[rec_id][i][j] * Io_temp[oct];
+        //                bool isgood = true;
+        //                for (int oct = 0; oct < 8; oct++)
+        //                {
+        //                    isgood &= !(double.IsInfinity(Io_t[oct]) || double.IsNaN(Io_t[oct]));
+        //                }
 
-                                if (V.x > 0) Dir_Rec_Pos[rec_id][oct, t, 0] += (float)V.x; else Dir_Rec_Neg[rec_id][oct, t, 0] += (float)V.x;
-                                if (V.y > 0) Dir_Rec_Pos[rec_id][oct, t, 1] += (float)V.y; else Dir_Rec_Neg[rec_id][oct, t, 1] += (float)V.y;
-                                if (V.z > 0) Dir_Rec_Pos[rec_id][oct, t, 2] += (float)V.z; else Dir_Rec_Neg[rec_id][oct, t, 2] += (float)V.z;
+        //                if (!isgood) continue;
 
-                                //double real, imag;
-                                //Utilities.Numerics.ExpComplex(0, (float)(Utilities.Numerics.angularFrequency[oct] * dist[rec_id][i][j] / C_Sound + Utilities.Numerics.PiX2 * rnd_in.NextDouble()), out real, out imag);
-                                //P[rec_id][t, oct] += (double)(Math.Sqrt(Io[oct] * Room.Rho_C(0)) * real);
-                            }
-                        }
-                    }
-                }//);
-            }
+        //                for (int oct = 0; oct < 8; oct++) Io_temp[oct].Add(Io_t[oct]);
+        //                t.Add(tau[rec_id][i][j]);
+        //            }
 
-            Special_Status.Instance.Reset();
-            return true;
-        }
+        //            if (t.Count < 5) continue;
+        //            for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
+        //            Intval[1] = tau[rec_id][i][tau[rec_id][i].Length - 1];
+        //            Intervals[i].Add(Intval);
+        //        }
 
-        public bool Surface_Calculation()
-        {
-            //Homogeneous media only...
-            SurfaceSource Ssrc = Src as SurfaceSource;
-            List<Hare.Geometry.Point> R;
+        //        //TODO: Splines built... build interpolated curves.
+        //        for (int i = 0; i < LSrc.Curves.Count; i++)
+        //        {
+        //            int start = (int)Math.Floor(Time_Pt[rec_id] * SampleFreq);
+        //            //TODO: Need to know start and end times for each of these...
+        //            if (I_Curve[i][0].Count != Intervals[i].Count) throw new Exception("Curves and intervals mismatch...");
+
+        //            for (int j = 0; j < Intervals[i].Count; j++)
+        //            {
+        //                int intvallength = (int)Math.Floor(Intervals[i][j][1] - Intervals[i][j][0]);
+        //                int dt_mod = intvallength < 0 ? -1 : 1;
+        //                intvallength *= dt_mod;
+
+        //                for (int t_ = 0; t_ < intvallength; t_++)
+        //                {
+        //                    int time = (int)Math.Floor(Intervals[i][j][0] + dt_mod * t_);
+
+        //                    int t = time - start;
+
+        //                    double[] Io_temp = new double[8];
+        //                    for (int oct = 0; oct < 8; oct++)
+        //                    {
+        //                        Io_temp[oct] = I_Curve[i][oct][j].Interpolate((double)time);
+        //                    }
+        //                    for (int oct = 0; oct < 8; oct++) if (!(double.IsInfinity(Io_temp[oct]) || double.IsNaN(Io_temp[oct]))) Io[rec_id][t, oct] += Io_temp[oct];
+
+        //                    for (int oct = 0; oct < 8; oct++)
+        //                    {
+        //                        if (Io_temp[oct] == 0) continue;
+        //                        Vector V = dir[rec_id][i][j] * Io_temp[oct];
+
+        //                        if (V.x > 0) Dir_Rec_Pos[rec_id][oct, t, 0] += (float)V.x; else Dir_Rec_Neg[rec_id][oct, t, 0] += (float)V.x;
+        //                        if (V.y > 0) Dir_Rec_Pos[rec_id][oct, t, 1] += (float)V.y; else Dir_Rec_Neg[rec_id][oct, t, 1] += (float)V.y;
+        //                        if (V.z > 0) Dir_Rec_Pos[rec_id][oct, t, 2] += (float)V.z; else Dir_Rec_Neg[rec_id][oct, t, 2] += (float)V.z;
+
+        //                        //double real, imag;
+        //                        //Utilities.Numerics.ExpComplex(0, (float)(Utilities.Numerics.angularFrequency[oct] * dist[rec_id][i][j] / C_Sound + Utilities.Numerics.PiX2 * rnd_in.NextDouble()), out real, out imag);
+        //                        //P[rec_id][t, oct] += (double)(Math.Sqrt(Io[oct] * Room.Rho_C(0)) * real);
+        //                    }
+        //                }
+        //            }
+        //        }//);
+        //    }
+
+        //    Special_Status.Instance.Reset();
+        //    return true;
+        //}
+
+        //public bool Surface_Calculation()
+        //{
+        //    //Homogeneous media only...
+        //    SurfaceSource Ssrc = Src as SurfaceSource;
+        //    List<Hare.Geometry.Point> R;
         
-            R = new List<Hare.Geometry.Point>();
-            foreach (Hare.Geometry.Point p in Receiver) R.Add(p);
-            Random rnd = new Random();
+        //    R = new List<Hare.Geometry.Point>();
+        //    foreach (Hare.Geometry.Point p in Receiver) R.Add(p);
+        //    Random rnd = new Random();
 
-            int[][][] tau = new int[R.Count][][]; //Rec;Curve;Sample
-            double[][][] dist = new double[R.Count][][]; //Rec;Curve;Sample
-            int[] RecT = new int[R.Count];
-            Io = new double[R.Count][,];
-            Validity = new Boolean[R.Count];
+        //    int[][][] tau = new int[R.Count][][]; //Rec;Curve;Sample
+        //    double[][][] dist = new double[R.Count][][]; //Rec;Curve;Sample
+        //    int[] RecT = new int[R.Count];
+        //    Io = new double[R.Count][,];
+        //    Validity = new Boolean[R.Count];
 
-            double C_Sound = Room.Sound_speed(0);
+        //    double C_Sound = Room.Sound_speed(0);
 
-            //int MT = MaxT;
+        //    //int MT = MaxT;
 
-            List<int> rndList = new List<int>();
-            for (int i = 0; i < R.Count; i++)
-            {
-                rndList.Add(rnd.Next());
-            }
+        //    List<int> rndList = new List<int>();
+        //    for (int i = 0; i < R.Count; i++)
+        //    {
+        //        rndList.Add(rnd.Next());
+        //    }
 
-            System.Threading.Semaphore S = new System.Threading.Semaphore(1, 1);
+        //    System.Threading.Semaphore S = new System.Threading.Semaphore(1, 1);
 
-            //for (int k = 0; k < R.Count; k++)
-            System.Threading.Tasks.Parallel.For(0, R.Count, k =>
-            {
-                Random RndGen = new Random(rndList[k]);
-                tau[k] = new int[Ssrc.Srfs.Count][];
-                dist[k] = new double[Ssrc.Srfs.Count][];
-                for (int i = 0; i < Ssrc.Srfs.Count; i++)
-                {
-                    tau[k][i] = new int[Ssrc.Samples[i].Length];
-                    dist[k][i] = new double[Ssrc.Samples[i].Length];
-                    Time_Pt[k] = double.MaxValue;
+        //    //for (int k = 0; k < R.Count; k++)
+        //    System.Threading.Tasks.Parallel.For(0, R.Count, k =>
+        //    {
+        //        Random RndGen = new Random(rndList[k]);
+        //        tau[k] = new int[Ssrc.Srfs.Count][];
+        //        dist[k] = new double[Ssrc.Srfs.Count][];
+        //        for (int i = 0; i < Ssrc.Srfs.Count; i++)
+        //        {
+        //            tau[k][i] = new int[Ssrc.Samples[i].Length];
+        //            dist[k][i] = new double[Ssrc.Samples[i].Length];
+        //            Time_Pt[k] = double.MaxValue;
 
-                    for (int j = 0; j < Ssrc.Samples[i].Length; j++)
-                    {
-                        Rhino.Geometry.Point3d p = Ssrc.Samples[i][j];
-                        Vector d = R[k] - Utilities.PachTools.RPttoHPt(Ssrc.Samples[i][j]);
-                        dist[k][i][j] = d.Length();
-                        double tdbl = dist[k][i][j] / C_Sound;
-                        tau[k][i][j] = (int)Math.Ceiling(tdbl * SampleFreq);
-                        if (RecT[k] < tau[k][i][j]) RecT[k] = tau[k][i][j];
+        //            for (int j = 0; j < Ssrc.Samples[i].Length; j++)
+        //            {
+        //                Point p = Ssrc.Samples[i][j];
+        //                Vector d = R[k] - Utilities.PachTools.RPttoHPt(Ssrc.Samples[i][j]);
+        //                dist[k][i][j] = d.Length();
+        //                double tdbl = dist[k][i][j] / C_Sound;
+        //                tau[k][i][j] = (int)Math.Ceiling(tdbl * SampleFreq);
+        //                if (RecT[k] < tau[k][i][j]) RecT[k] = tau[k][i][j];
 
-                        if (Time_Pt[k] > tdbl) Time_Pt[k] = tdbl;
+        //                if (Time_Pt[k] > tdbl) Time_Pt[k] = tdbl;
 
-                        d.Normalize();
+        //                d.Normalize();
 
-                        Ray D = new Ray(Utilities.PachTools.RPttoHPt(p), d, 0, RndGen.Next());
-                        double x1 = 0, x2 = 0;
-                        List<double> t_in;
-                        List<int> code;
-                        int x3 = 0;
-                        List<Hare.Geometry.Point> x4;
-                        if (Room.shoot(D, out x1, out x2, out x3, out x4, out t_in, out code))
-                        {
-                            if (t_in[0] >= dist[k][i][j]) Validity[k] = true; ;
-                        }
-                        else
-                        {
-                            Validity[k] = true;
-                        }
-                    }
-                }
+        //                Ray D = new Ray(Utilities.PachTools.RPttoHPt(p), d, 0, RndGen.Next());
+        //                double x1 = 0, x2 = 0;
+        //                List<double> t_in;
+        //                List<int> code;
+        //                int x3 = 0;
+        //                List<Hare.Geometry.Point> x4;
+        //                if (Room.shoot(D, out x1, out x2, out x3, out x4, out t_in, out code))
+        //                {
+        //                    if (t_in[0] >= dist[k][i][j]) Validity[k] = true; ;
+        //                }
+        //                else
+        //                {
+        //                    Validity[k] = true;
+        //                }
+        //            }
+        //        }
 
-                S.WaitOne();
-                //foreach (int T in RecT) if (MT < T) MT = T;
-                Special_Status.Instance.progress += 1.0f / R.Count;
-                S.Release();
-            });
+        //        S.WaitOne();
+        //        //foreach (int T in RecT) if (MT < T) MT = T;
+        //        Special_Status.Instance.progress += 1.0f / R.Count;
+        //        S.Release();
+        //    });
 
-            //MaxT = MT;
+        //    //MaxT = MT;
 
-            for (int rec_id = 0; rec_id < R.Count; rec_id++)
-            {
-                Io[rec_id] = new double[RecT[rec_id] + 1, 8];
-                ////Parallel.For(0, SrcPts.Count, i =>
-                for (int i = 0; i < Ssrc.Srfs.Count; i++)
-                {
-                    for (int j = 0; j < tau[rec_id][i].Length; j++)
-                    {
-                        double[] Io_t = new double[8];
+        //    for (int rec_id = 0; rec_id < R.Count; rec_id++)
+        //    {
+        //        Io[rec_id] = new double[RecT[rec_id] + 1, 8];
+        //        ////Parallel.For(0, SrcPts.Count, i =>
+        //        for (int i = 0; i < Ssrc.Srfs.Count; i++)
+        //        {
+        //            for (int j = 0; j < tau[rec_id][i].Length; j++)
+        //            {
+        //                double[] Io_t = new double[8];
 
-                        //Io_t[0] = Ssrc.DomainPower[i][0] * Math.Pow(10,-.1 * Room.Attenuation(0)[0] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
-                        //Io_t[1] = Ssrc.DomainPower[i][1] * Math.Pow(10,-.1 * Room.Attenuation(0)[1] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
-                        //Io_t[2] = Ssrc.DomainPower[i][2] * Math.Pow(10,-.1 * Room.Attenuation(0)[2] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
-                        //Io_t[3] = Ssrc.DomainPower[i][3] * Math.Pow(10,-.1 * Room.Attenuation(0)[3] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
-                        //Io_t[4] = Ssrc.DomainPower[i][4] * Math.Pow(10,-.1 * Room.Attenuation(0)[4] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
-                        //Io_t[5] = Ssrc.DomainPower[i][5] * Math.Pow(10,-.1 * Room.Attenuation(0)[5] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
-                        //Io_t[6] = Ssrc.DomainPower[i][6] * Math.Pow(10,-.1 * Room.Attenuation(0)[6] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
-                        //Io_t[7] = Ssrc.DomainPower[i][7] * Math.Pow(10,-.1 * Room.Attenuation(0)[7] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[0] = Ssrc.DomainPower[i][0] * Math.Pow(10,-.1 * Room.Attenuation(0)[0] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[1] = Ssrc.DomainPower[i][1] * Math.Pow(10,-.1 * Room.Attenuation(0)[1] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[2] = Ssrc.DomainPower[i][2] * Math.Pow(10,-.1 * Room.Attenuation(0)[2] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[3] = Ssrc.DomainPower[i][3] * Math.Pow(10,-.1 * Room.Attenuation(0)[3] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[4] = Ssrc.DomainPower[i][4] * Math.Pow(10,-.1 * Room.Attenuation(0)[4] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[5] = Ssrc.DomainPower[i][5] * Math.Pow(10,-.1 * Room.Attenuation(0)[5] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[6] = Ssrc.DomainPower[i][6] * Math.Pow(10,-.1 * Room.Attenuation(0)[6] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
+        //                //Io_t[7] = Ssrc.DomainPower[i][7] * Math.Pow(10,-.1 * Room.Attenuation(0)[7] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]);
 
-                        Io_t[0] = Math.Pow(10, Ssrc.DomainLevel[i][0] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[0] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
-                        Io_t[1] = Math.Pow(10, Ssrc.DomainLevel[i][1] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[1] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
-                        Io_t[2] = Math.Pow(10, Ssrc.DomainLevel[i][2] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[2] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
-                        Io_t[3] = Math.Pow(10, Ssrc.DomainLevel[i][3] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[3] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
-                        Io_t[4] = Math.Pow(10, Ssrc.DomainLevel[i][4] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[4] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
-                        Io_t[5] = Math.Pow(10, Ssrc.DomainLevel[i][5] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[5] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
-                        Io_t[6] = Math.Pow(10, Ssrc.DomainLevel[i][6] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[6] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
-                        Io_t[7] = Math.Pow(10, Ssrc.DomainLevel[i][7] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[7] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[0] = Math.Pow(10, Ssrc.DomainLevel[i][0] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[0] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[1] = Math.Pow(10, Ssrc.DomainLevel[i][1] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[1] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[2] = Math.Pow(10, Ssrc.DomainLevel[i][2] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[2] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[3] = Math.Pow(10, Ssrc.DomainLevel[i][3] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[3] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[4] = Math.Pow(10, Ssrc.DomainLevel[i][4] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[4] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[5] = Math.Pow(10, Ssrc.DomainLevel[i][5] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[5] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[6] = Math.Pow(10, Ssrc.DomainLevel[i][6] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[6] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
+        //                Io_t[7] = Math.Pow(10, Ssrc.DomainLevel[i][7] / 10) * 1E-12 * Math.Exp(-0.2302 * Room.Attenuation(0)[7] * dist[rec_id][i][j]) / (4 * Math.PI * dist[rec_id][i][j] * dist[rec_id][i][j]) / Ssrc.Samples[i].Length;
 
 
-                        Io[rec_id][tau[rec_id][i][j], 0] += Io_t[0];
-                        Io[rec_id][tau[rec_id][i][j], 1] += Io_t[1];
-                        Io[rec_id][tau[rec_id][i][j], 2] += Io_t[2];
-                        Io[rec_id][tau[rec_id][i][j], 3] += Io_t[3];
-                        Io[rec_id][tau[rec_id][i][j], 4] += Io_t[4];
-                        Io[rec_id][tau[rec_id][i][j], 5] += Io_t[5];
-                        Io[rec_id][tau[rec_id][i][j], 6] += Io_t[6];
-                        Io[rec_id][tau[rec_id][i][j], 7] += Io_t[7];
+        //                Io[rec_id][tau[rec_id][i][j], 0] += Io_t[0];
+        //                Io[rec_id][tau[rec_id][i][j], 1] += Io_t[1];
+        //                Io[rec_id][tau[rec_id][i][j], 2] += Io_t[2];
+        //                Io[rec_id][tau[rec_id][i][j], 3] += Io_t[3];
+        //                Io[rec_id][tau[rec_id][i][j], 4] += Io_t[4];
+        //                Io[rec_id][tau[rec_id][i][j], 5] += Io_t[5];
+        //                Io[rec_id][tau[rec_id][i][j], 6] += Io_t[6];
+        //                Io[rec_id][tau[rec_id][i][j], 7] += Io_t[7];
 
-                        //for (int oct = 0; oct < 8; oct++)
-                        //{
-                        //    double real, imag;
-                        //    Utilities.Numerics.ExpComplex(0, (float)(Utilities.Numerics.angularFrequency[oct] * dist[rec_id][i][j] / C_Sound + Utilities.Numerics.PiX2 * rnd_in.NextDouble()), out real, out imag);
-                        //    P_real[rec_id][tau[rec_id][i][j], oct] += (float)(Math.Sqrt(Io[oct] * Room.Rho_C(0)) * real);
-                        //    P_imag[rec_id][tau[rec_id][i][j], oct] += (float)(Math.Sqrt(Io[oct] * Room.Rho_C(0)) * imag);
-                        //}
-                    }
-                }//);
-            }
-            return true;
-        }
+        //                //for (int oct = 0; oct < 8; oct++)
+        //                //{
+        //                //    double real, imag;
+        //                //    Utilities.Numerics.ExpComplex(0, (float)(Utilities.Numerics.angularFrequency[oct] * dist[rec_id][i][j] / C_Sound + Utilities.Numerics.PiX2 * rnd_in.NextDouble()), out real, out imag);
+        //                //    P_real[rec_id][tau[rec_id][i][j], oct] += (float)(Math.Sqrt(Io[oct] * Room.Rho_C(0)) * real);
+        //                //    P_imag[rec_id][tau[rec_id][i][j], oct] += (float)(Math.Sqrt(Io[oct] * Room.Rho_C(0)) * imag);
+        //                //}
+        //            }
+        //        }//);
+        //    }
+        //    return true;
+        //}
 
 
 }

@@ -181,163 +181,163 @@ namespace Pachyderm_Acoustic
             }
         }
 
-        public class Finite_Material : Material
-        {
-            double[][][] alpha;
-            double[] Azimuth;
-            double[] Altitude;
+        //public class Finite_Material : Material
+        //{
+        //    double[][][] alpha;
+        //    double[] Azimuth;
+        //    double[] Altitude;
 
-            Smart_Material Inf_Mat;
+        //    Smart_Material Inf_Mat;
 
-            public Finite_Material(Smart_Material Mat, Rhino.Geometry.Brep Br, Rhino.Geometry.Mesh M, int face_id, Medium_Properties med)
-            {
-                //Strictly for the flat X,Y case - oversimplified for now.
-                Inf_Mat = Mat;
-                Azimuth = new double[36];
-                Altitude = new double[Mat.Angles.Length/2];
-                alpha = new double[Altitude.Length][][];
-                for(int i = 0; i < Altitude.Length; i++) Altitude[i] = Mat.Angles[i].Magnitude;
-                for(int i = 0; i < Azimuth.Length; i++) Azimuth[i] = i * 360f / Azimuth.Length;
+        //    public Finite_Material(Smart_Material Mat, Brep Br, Mesh M, int face_id, Medium_Properties med)
+        //    {
+        //        //Strictly for the flat X,Y case - oversimplified for now.
+        //        Inf_Mat = Mat;
+        //        Azimuth = new double[36];
+        //        Altitude = new double[Mat.Angles.Length/2];
+        //        alpha = new double[Altitude.Length][][];
+        //        for(int i = 0; i < Altitude.Length; i++) Altitude[i] = Mat.Angles[i].Magnitude;
+        //        for(int i = 0; i < Azimuth.Length; i++) Azimuth[i] = i * 360f / Azimuth.Length;
 
-                    //Set up a frequency interpolated Zr for each direction individually.
-                    Rhino.Geometry.Point3d pt = M.Faces.GetFaceCenter(face_id);
+        //            //Set up a frequency interpolated Zr for each direction individually.
+        //            Point pt = M.Faces.GetFaceCenter(face_id);
 
-                    double[][][] ZrR = new double[Altitude.Length][][], ZrI = new double[Altitude.Length][][];
-                    double[] fr = new double[9];
-                    for (int k = 0; k < Altitude.Length; k++)
-                    {
-                        ZrR[k] = new double[Azimuth.Length][];
-                        ZrI[k] = new double[Azimuth.Length][];
-                        alpha[k] = new double[Azimuth.Length][];
-                        for (int j = 0; j < Azimuth.Length; j++)
-                        {
-                            ZrR[k][j] = new double[9];
-                            ZrI[k][j] = new double[9];
-                            alpha[k][j] = new double[8];
-                        }
-                    }
+        //            double[][][] ZrR = new double[Altitude.Length][][], ZrI = new double[Altitude.Length][][];
+        //            double[] fr = new double[9];
+        //            for (int k = 0; k < Altitude.Length; k++)
+        //            {
+        //                ZrR[k] = new double[Azimuth.Length][];
+        //                ZrI[k] = new double[Azimuth.Length][];
+        //                alpha[k] = new double[Azimuth.Length][];
+        //                for (int j = 0; j < Azimuth.Length; j++)
+        //                {
+        //                    ZrR[k][j] = new double[9];
+        //                    ZrI[k][j] = new double[9];
+        //                    alpha[k][j] = new double[8];
+        //                }
+        //            }
 
-                    for (int oct = 0; oct < 9; oct++)
-                    {
-                        fr[oct] = 62.5 * Math.Pow(2, oct) / Utilities.Numerics.rt2;
-                        System.Numerics.Complex[][] Zr = AbsorptionModels.Operations.Finite_Radiation_Impedance_Rect_Longhand(pt.X, pt.Y, Br, fr[oct], Altitude, Azimuth, med.Sound_Speed(pt));
+        //            for (int oct = 0; oct < 9; oct++)
+        //            {
+        //                fr[oct] = 62.5 * Math.Pow(2, oct) / Utilities.Numerics.rt2;
+        //                System.Numerics.Complex[][] Zr = AbsorptionModels.Operations.Finite_Radiation_Impedance_Rect_Longhand(pt.x, pt.y, Br, fr[oct], Altitude, Azimuth, med.Sound_Speed(pt));
 
-                        for (int k = 0; k < Zr.Length; k++)
-                        {
-                            for (int j = 0; j < Zr[k].Length; j++)
-                            {
-                                ZrR[k][j][oct] = Zr[k][j].Real;
-                                ZrI[k][j][oct] = Zr[k][j].Imaginary;
-                            }
-                        }
-                    }
+        //                for (int k = 0; k < Zr.Length; k++)
+        //                {
+        //                    for (int j = 0; j < Zr[k].Length; j++)
+        //                    {
+        //                        ZrR[k][j][oct] = Zr[k][j].Real;
+        //                        ZrI[k][j][oct] = Zr[k][j].Imaginary;
+        //                    }
+        //                }
+        //            }
 
-                    MathNet.Numerics.Interpolation.CubicSpline[][] Zr_r = new MathNet.Numerics.Interpolation.CubicSpline[Altitude.Length][];
-                    MathNet.Numerics.Interpolation.CubicSpline[][] Zr_i = new MathNet.Numerics.Interpolation.CubicSpline[Altitude.Length][];
+        //            MathNet.Numerics.Interpolation.CubicSpline[][] Zr_r = new MathNet.Numerics.Interpolation.CubicSpline[Altitude.Length][];
+        //            MathNet.Numerics.Interpolation.CubicSpline[][] Zr_i = new MathNet.Numerics.Interpolation.CubicSpline[Altitude.Length][];
 
-                    for (int k = 0; k < Zr_r.Length; k++)
-                    {
-                        Zr_r[k] = new MathNet.Numerics.Interpolation.CubicSpline[Azimuth.Length];
-                        Zr_i[k] = new MathNet.Numerics.Interpolation.CubicSpline[Azimuth.Length];
-                        for (int j = 0; j < Zr_r[k].Length; j++)
-                        {
-                            //Interpolate over curve real and imaginary Zr here...
-                            Zr_r[k][j] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(fr, ZrR[k][j]);
-                            Zr_i[k][j] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(fr, ZrI[k][j]);
-                        }
-                    }
+        //            for (int k = 0; k < Zr_r.Length; k++)
+        //            {
+        //                Zr_r[k] = new MathNet.Numerics.Interpolation.CubicSpline[Azimuth.Length];
+        //                Zr_i[k] = new MathNet.Numerics.Interpolation.CubicSpline[Azimuth.Length];
+        //                for (int j = 0; j < Zr_r[k].Length; j++)
+        //                {
+        //                    //Interpolate over curve real and imaginary Zr here...
+        //                    Zr_r[k][j] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(fr, ZrR[k][j]);
+        //                    Zr_i[k][j] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(fr, ZrI[k][j]);
+        //                }
+        //            }
 
-                    for (int k = 0; k < Zr_r.Length; k++)
-                    {
-                        for (int j = 0; j < Zr_r[k].Length; j++)
-                        {
-                            List<double> freq = new List<double>();
-                            List<double> alpha_interp = new List<double>();
-                            for (int l = 0; l < Mat.frequency.Length; l++)
-                            {
-                                if (Mat.frequency[l] > 10000) break;
-                                freq.Add(Mat.frequency[l]);
-                                alpha_interp.Add(AbsorptionModels.Operations.Finite_Unit_Absorption_Coefficient(Mat.Z[k][j], new System.Numerics.Complex(Zr_r[k][j].Interpolate(Mat.frequency[l]), Zr_i[k][j].Interpolate(Mat.frequency[l])), med.Rho(Utilities.PachTools.RPttoHPt(pt)), med.Sound_Speed(pt)));
-                            }
-                            MathNet.Numerics.Interpolation.CubicSpline a = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(freq, alpha_interp);
-                            for (int oct = 0; oct < 8; oct++)
-                            {
-                                alpha[k][j][oct] = 1 - a.Integrate(fr[oct], fr[oct + 1]) / (fr[oct + 1] - fr[oct]);
-                            }
-                        }
-                    }
-            }
+        //            for (int k = 0; k < Zr_r.Length; k++)
+        //            {
+        //                for (int j = 0; j < Zr_r[k].Length; j++)
+        //                {
+        //                    List<double> freq = new List<double>();
+        //                    List<double> alpha_interp = new List<double>();
+        //                    for (int l = 0; l < Mat.frequency.Length; l++)
+        //                    {
+        //                        if (Mat.frequency[l] > 10000) break;
+        //                        freq.Add(Mat.frequency[l]);
+        //                        alpha_interp.Add(AbsorptionModels.Operations.Finite_Unit_Absorption_Coefficient(Mat.Z[k][j], new System.Numerics.Complex(Zr_r[k][j].Interpolate(Mat.frequency[l]), Zr_i[k][j].Interpolate(Mat.frequency[l])), med.Rho(Utilities.PachTools.RPttoHPt(pt)), med.Sound_Speed(pt)));
+        //                    }
+        //                    MathNet.Numerics.Interpolation.CubicSpline a = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(freq, alpha_interp);
+        //                    for (int oct = 0; oct < 8; oct++)
+        //                    {
+        //                        alpha[k][j][oct] = 1 - a.Integrate(fr[oct], fr[oct + 1]) / (fr[oct + 1] - fr[oct]);
+        //                    }
+        //                }
+        //            }
+        //    }
 
-            public override void Absorb(ref BroadRay Ray, Hare.Geometry.Vector Normal)
-            {
-                //Simplified for sample laid on floor...
-                Ray.direction.Normalize();
-                int Alt = (int)Math.Floor((Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1))) * Altitude.Length) / (Math.PI / 2));
-                if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
-                int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI);
-                if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
-                for (int oct = 0; oct < 8; oct++) Ray.Energy[oct] *= alpha[Alt][Azi][oct];
-            }
+        //    public override void Absorb(ref BroadRay Ray, Hare.Geometry.Vector Normal)
+        //    {
+        //        //Simplified for sample laid on floor...
+        //        Ray.direction.Normalize();
+        //        int Alt = (int)Math.Floor((Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1))) * Altitude.Length) / (Math.PI / 2));
+        //        if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
+        //        int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI);
+        //        if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
+        //        for (int oct = 0; oct < 8; oct++) Ray.Energy[oct] *= alpha[Alt][Azi][oct];
+        //    }
 
-            public override void Absorb(ref BroadRay Ray, out double cos_theta, Hare.Geometry.Vector Normal)
-            {
-                Ray.direction.Normalize();
-                cos_theta = Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1)));
-                int Alt = (int)Math.Floor((cos_theta * Altitude.Length) / (Math.PI / 2));
-                if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
-                int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI);
-                if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
+        //    public override void Absorb(ref BroadRay Ray, out double cos_theta, Hare.Geometry.Vector Normal)
+        //    {
+        //        Ray.direction.Normalize();
+        //        cos_theta = Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1)));
+        //        int Alt = (int)Math.Floor((cos_theta * Altitude.Length) / (Math.PI / 2));
+        //        if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
+        //        int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI);
+        //        if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
                 
-                for (int oct = 0; oct < 8; oct++) Ray.Energy[oct] *= alpha[Alt][Azi][oct];                
-            }
+        //        for (int oct = 0; oct < 8; oct++) Ray.Energy[oct] *= alpha[Alt][Azi][oct];                
+        //    }
 
-            public override void Absorb(ref OctaveRay Ray, Hare.Geometry.Vector Normal)
-            {
-                Ray.direction.Normalize();
-                int Alt = (int)Math.Floor((Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1))) * Altitude.Length) / (Math.PI / 2));
-                if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
-                int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI);
-                if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
-                Ray.Intensity *= alpha[Alt][Azi][Ray.Octave];
-            }
+        //    public override void Absorb(ref OctaveRay Ray, Hare.Geometry.Vector Normal)
+        //    {
+        //        Ray.direction.Normalize();
+        //        int Alt = (int)Math.Floor((Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1))) * Altitude.Length) / (Math.PI / 2));
+        //        if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
+        //        int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI);
+        //        if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
+        //        Ray.Intensity *= alpha[Alt][Azi][Ray.Octave];
+        //    }
 
-            public override void Absorb(ref OctaveRay Ray, out double cos_theta, Hare.Geometry.Vector Normal)
-            {
-                Ray.direction.Normalize();
-                cos_theta = Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1)));
-                int Alt = (int)Math.Floor((cos_theta * Altitude.Length) / (Math.PI / 2));
-                if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
-                int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI / 2);
-                if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
-                if (Azi == Azimuth.Length) Azi = 0;
-                Ray.Intensity *= alpha[Alt][Azi][Ray.Octave];
-            }
+        //    public override void Absorb(ref OctaveRay Ray, out double cos_theta, Hare.Geometry.Vector Normal)
+        //    {
+        //        Ray.direction.Normalize();
+        //        cos_theta = Math.Acos(Hare.Geometry.Hare_math.Dot(Ray.direction, new Hare.Geometry.Vector(0, 0, -1)));
+        //        int Alt = (int)Math.Floor((cos_theta * Altitude.Length) / (Math.PI / 2));
+        //        if (Alt >= Altitude.Length / 2) Alt = Altitude.Length - 1;
+        //        int Azi = (int)Math.Round((Math.Atan2(Ray.direction.y, Ray.direction.x) * Azimuth.Length) / Math.PI / 2);
+        //        if (Ray.direction.y < 0 && Azi < Azimuth.Length / 2) Azi = Azimuth.Length - Math.Abs(Azi);
+        //        if (Azi == Azimuth.Length) Azi = 0;
+        //        Ray.Intensity *= alpha[Alt][Azi][Ray.Octave];
+        //    }
 
-            public override double[] Coefficient_A_Broad()
-            {
-                return Inf_Mat.Coefficient_A_Broad();
-            }
+        //    public override double[] Coefficient_A_Broad()
+        //    {
+        //        return Inf_Mat.Coefficient_A_Broad();
+        //    }
 
-            public override double Coefficient_A_Broad(int Octave)
-            {
-                return Inf_Mat.Coefficient_A_Broad(Octave);
-            }
+        //    public override double Coefficient_A_Broad(int Octave)
+        //    {
+        //        return Inf_Mat.Coefficient_A_Broad(Octave);
+        //    }
 
-            public override System.Numerics.Complex Reflection_Narrow(double frequency)
-            {
-                return Inf_Mat.Reflection_Narrow(frequency);
-            }
+        //    public override System.Numerics.Complex Reflection_Narrow(double frequency)
+        //    {
+        //        return Inf_Mat.Reflection_Narrow(frequency);
+        //    }
 
-            public override System.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
-            {
-                return Inf_Mat.Reflection_Narrow(frequency, Dir, Normal);
-            }
+        //    public override System.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
+        //    {
+        //        return Inf_Mat.Reflection_Narrow(frequency, Dir, Normal);
+        //    }
 
-            public override System.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
-            {
-                return Inf_Mat.Reflection_Spectrum(sample_frequency, length, Normal, Dir, threadid);
-            }
-        }
+        //    public override System.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
+        //    {
+        //        return Inf_Mat.Reflection_Spectrum(sample_frequency, length, Normal, Dir, threadid);
+        //    }
+        //}
 
         public class Smart_Material : Material
         {
@@ -777,10 +777,10 @@ namespace Pachyderm_Acoustic
                     //Return the new direction
                     R.direction = vect;
 
-                    if (R.t_sum == 0)
-                    {
-                        Rhino.RhinoApp.Write("Something's up!");
-                    }
+                    //if (R.t_sum == 0)
+                    //{
+                    //    Rhino.RhinoApp.Write("Something's up!");
+                    //}
 
                     Rays.Enqueue(R);
 
@@ -856,10 +856,10 @@ namespace Pachyderm_Acoustic
                     // this is the specular reflection. Save it for later.
                     tr.direction -= Normal * Cos_Theta * 2;
 
-                    if (tr.t_sum == 0)
-                    {
-                        Rhino.RhinoApp.Write("Something's up!");
-                    }
+                    //if (tr.t_sum == 0)
+                    //{
+                    //    Rhino.RhinoApp.Write("Something's up!");
+                    //}
 
                     Rays.Enqueue(tr);
                 }

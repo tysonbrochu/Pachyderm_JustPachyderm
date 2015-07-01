@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using Hare.Geometry;
-using Rhino.Geometry;
 
 namespace Pachyderm_Acoustic
 {
@@ -31,7 +30,7 @@ namespace Pachyderm_Acoustic
         [Serializable]
         public abstract class Source
         {
-            protected Point3d Center;
+            protected Point Center;
             protected double[] SPL = new double[8];
             protected double[] SourcePower = new double[8];
             protected double[] phase;
@@ -49,11 +48,11 @@ namespace Pachyderm_Acoustic
             /// <param name="TotalRays_in">Number of rays </param>
             /// <param name="Broadband_Time"></param>
             /// <param name="ID">The identifier of the source</param>
-            public Source(double[] power_In_db, Point3d Source, Phase_Regime p, int ID)
+            public Source(double[] power_In_db, Point Source, Phase_Regime p, int ID)
             {
                 ph = p;
                 S_ID = ID;
-                H_Center = new Hare.Geometry.Point(Source.X, Source.Y, Source.Z);
+                H_Center = new Hare.Geometry.Point(Source.x, Source.y, Source.z);
                 Center = Source;                
 
                 SPL[0] = power_In_db[0];
@@ -84,10 +83,10 @@ namespace Pachyderm_Acoustic
             /// <param name="TotalRays_in">Number of rays </param>
             /// <param name="Broadband_Time"></param>
             /// <param name="ID">The identifier of the source</param>
-            public Source(Point3d Source, int ID)
+            public Source(Point Source, int ID)
             {
                 S_ID = ID;
-                H_Center = new Hare.Geometry.Point(Source.X, Source.Y, Source.Z);
+                H_Center = new Hare.Geometry.Point(Source.x, Source.y, Source.z);
                 Center = Source;
 
                 SPL[0] = 120;
@@ -109,7 +108,7 @@ namespace Pachyderm_Acoustic
                 SourcePower[7] = 1E-12 * Math.Pow(10, .1 * SPL[7]);
             }
 
-            public virtual void AppendPts(ref List<Point3d> SPT)
+            public virtual void AppendPts(ref List<Point> SPT)
             {
                 SPT.Add(Origin());
             }
@@ -174,7 +173,7 @@ namespace Pachyderm_Acoustic
             /// The origin of the source.
             /// </summary>
             /// <returns></returns>
-            public Point3d Origin()
+            public Point Origin()
             {
                 return Center;
             }
@@ -247,20 +246,20 @@ namespace Pachyderm_Acoustic
         [Serializable]
         public class RandomSource: Source
         {
-            public RandomSource(double[] power_in_db, double[] phase_in, Point3d Source, double delay_in, int ID)
+            public RandomSource(double[] power_in_db, double[] phase_in, Point Source, double delay_in, int ID)
             :this(power_in_db, phase_in, Source, ID)
             {
                 delay = delay_in;
             }
 
-            public RandomSource(double[] power_in_db, double[] phase_in, Point3d Source, int ID)
+            public RandomSource(double[] power_in_db, double[] phase_in, Point Source, int ID)
                 :base(power_in_db, Source, Phase_Regime.Explicit_Homogeneous, ID)
             {
                 phase = phase_in;
                 type = "PseudoRandom";
             }
 
-            public RandomSource(double[] power_in_db, Point3d Source, Phase_Regime ph, int ID)
+            public RandomSource(double[] power_in_db, Point Source, Phase_Regime ph, int ID)
                 : base(power_in_db, Source, ph, ID)
             {
                 type = "PseudoRandom";
@@ -334,13 +333,13 @@ namespace Pachyderm_Acoustic
             int Fnum = 0;
             protected int rayct = 0;
             
-            public GeodesicSource(double[] power_in_db, double[] phase_in, Point3d Source, double delay_in, int ID)
+            public GeodesicSource(double[] power_in_db, double[] phase_in, Point Source, double delay_in, int ID)
             :this(power_in_db, phase_in, Source, ID)
             {
                 delay = delay_in;
             }
 
-            public GeodesicSource(double[] power_in_db, double[] phase_in, Point3d Source, int ID)
+            public GeodesicSource(double[] power_in_db, double[] phase_in, Point Source, int ID)
                 :base(power_in_db, Source, Phase_Regime.Explicit_Homogeneous, ID)
             {
                 phase = phase_in;
@@ -349,7 +348,7 @@ namespace Pachyderm_Acoustic
                 GeoSphere(3);
             }
 
-            public GeodesicSource(double[] power_in_db, Point3d Source, Phase_Regime ph, int ID)
+            public GeodesicSource(double[] power_in_db, Point Source, Phase_Regime ph, int ID)
                 : base(power_in_db, Source, ph, ID)
             {
                 Random RAND = new Random();
@@ -510,13 +509,13 @@ namespace Pachyderm_Acoustic
         {
             Hare.Geometry.Voxel_Grid Balloon;
 
-            public SpeakerSource(Speaker_Balloon S, double[] power_in_db, double[] phase_in, Point3d Source, int[] Bands, double delay_in, int ID)
+            public SpeakerSource(Speaker_Balloon S, double[] power_in_db, double[] phase_in, Point Source, int[] Bands, double delay_in, int ID)
             :this(S, power_in_db, phase_in, Source, Bands, ID)
             {
                 delay = delay_in;
             }
 
-            public SpeakerSource(Speaker_Balloon S, double[] power_in_db, double[] phase_in, Point3d Source, int[] Bands, int ID)
+            public SpeakerSource(Speaker_Balloon S, double[] power_in_db, double[] phase_in, Point Source, int[] Bands, int ID)
                 :base(power_in_db, Source, Phase_Regime.Explicit_Nonhomogeneous, ID)
             {
                 for (int oct = 0; oct < 8; oct++)
@@ -630,181 +629,181 @@ namespace Pachyderm_Acoustic
             //}
         }
 
-        /// <summary>
-        /// source object based on the vertices of a geodesic sphere.
-        /// </summary>
-        [Serializable]
-        public class GeodesicMeshSource : Source
-        {
-            Topology T;
-            Hare.Geometry.Point[][] P;
-            int Fnum = 0;
-            public Mesh GeoMesh;
-            List<Vector> SrcDirections;
+        ///// <summary>
+        ///// source object based on the vertices of a geodesic sphere.
+        ///// </summary>
+        //[Serializable]
+        //public class GeodesicMeshSource : Source
+        //{
+        //    Topology T;
+        //    Hare.Geometry.Point[][] P;
+        //    int Fnum = 0;
+        //    public Mesh GeoMesh;
+        //    List<Vector> SrcDirections;
 
-            public GeodesicMeshSource(double[] power_in_db, Point3d Source, int MinRays, int ID)
-                : base(power_in_db, Source, Phase_Regime.Explicit_Homogeneous, ID)
-            {
-                Random RAND = new Random();
-                type = "Geodesic";
-                int j = 2;
-                while(true)
-                {
-                    Fnum = 0;
-                    j++;
-                    GeoSphere(j);
-                    if (T.Vertex_Count > MinRays) break;
-                }
+        //    public GeodesicMeshSource(double[] power_in_db, Point Source, int MinRays, int ID)
+        //        : base(power_in_db, Source, Phase_Regime.Explicit_Homogeneous, ID)
+        //    {
+        //        Random RAND = new Random();
+        //        type = "Geodesic";
+        //        int j = 2;
+        //        while(true)
+        //        {
+        //            Fnum = 0;
+        //            j++;
+        //            GeoSphere(j);
+        //            if (T.Vertex_Count > MinRays) break;
+        //        }
 
-                GeoMesh = Utilities.PachTools.Hare_to_RhinoMesh(T);
-                GeoMesh.Vertices.CombineIdentical(true, true);
-                //Utilities.PachTools.Plot_Hare_Topology(T);
-                SrcDirections = new List<Vector>();
+        //        GeoMesh = Utilities.PachTools.Hare_to_RhinoMesh(T);
+        //        GeoMesh.Vertices.CombineIdentical(true, true);
+        //        //Utilities.PachTools.Plot_Hare_Topology(T);
+        //        SrcDirections = new List<Vector>();
 
-                for (int i = 0; i < GeoMesh.TopologyVertices.Count; i++)
-                {
-                    Vector D = new Vector(GeoMesh.Vertices[i].X, GeoMesh.Vertices[i].Y, GeoMesh.Vertices[i].Z);
-                    D.Normalize();
-                    SrcDirections.Add(D);
-                }
-            }
+        //        for (int i = 0; i < GeoMesh.TopologyVertices.Count; i++)
+        //        {
+        //            Vector D = new Vector(GeoMesh.Vertices[i].x, GeoMesh.Vertices[i].y, GeoMesh.Vertices[i].z);
+        //            D.Normalize();
+        //            SrcDirections.Add(D);
+        //        }
+        //    }
 
-            /// <summary>
-            /// creates a geodesic sphere.
-            /// </summary>
-            /// <param name="order"></param>
-            public void GeoSphere(int order)
-            {
-                double sqr5 = System.Math.Sqrt(5.0);
-                double phi = (1.0 + sqr5) * 0.5; // golden ratio
-                double ratio = System.Math.Sqrt(10.0 + (2.0 * sqr5)) / (4.0 * phi);
-                double a = (.25 / ratio) * 0.5;
-                double b = (.25 / ratio) / (2.0 * phi);
+        //    /// <summary>
+        //    /// creates a geodesic sphere.
+        //    /// </summary>
+        //    /// <param name="order"></param>
+        //    public void GeoSphere(int order)
+        //    {
+        //        double sqr5 = System.Math.Sqrt(5.0);
+        //        double phi = (1.0 + sqr5) * 0.5; // golden ratio
+        //        double ratio = System.Math.Sqrt(10.0 + (2.0 * sqr5)) / (4.0 * phi);
+        //        double a = (.25 / ratio) * 0.5;
+        //        double b = (.25 / ratio) / (2.0 * phi);
 
-                // Define the icosahedron's 12 vertices
-                Vector P0 = new Vector(0, b, -a);
-                Vector P1 = new Vector(b, a, 0);
-                Vector P2 = new Vector(-b, a, 0);
-                Vector P3 = new Vector(0, b, a);
-                Vector P4 = new Vector(0, -b, a);
-                Vector P5 = new Vector(-a, 0, b);
-                Vector P6 = new Vector(0, -b, -a);
-                Vector P7 = new Vector(a, 0, -b);
-                Vector P8 = new Vector(a, 0, b);
-                Vector P9 = new Vector(-a, 0, -b);
-                Vector P10 = new Vector(b, -a, 0);
-                Vector P11 = new Vector(-b, -a, 0);
+        //        // Define the icosahedron's 12 vertices
+        //        Vector P0 = new Vector(0, b, -a);
+        //        Vector P1 = new Vector(b, a, 0);
+        //        Vector P2 = new Vector(-b, a, 0);
+        //        Vector P3 = new Vector(0, b, a);
+        //        Vector P4 = new Vector(0, -b, a);
+        //        Vector P5 = new Vector(-a, 0, b);
+        //        Vector P6 = new Vector(0, -b, -a);
+        //        Vector P7 = new Vector(a, 0, -b);
+        //        Vector P8 = new Vector(a, 0, b);
+        //        Vector P9 = new Vector(-a, 0, -b);
+        //        Vector P10 = new Vector(b, -a, 0);
+        //        Vector P11 = new Vector(-b, -a, 0);
 
-                P0.Normalize();
-                P1.Normalize();
-                P2.Normalize();
-                P3.Normalize();
-                P4.Normalize();
-                P5.Normalize();
-                P6.Normalize();
-                P7.Normalize();
-                P8.Normalize();
-                P9.Normalize();
-                P10.Normalize();
-                P11.Normalize();
+        //        P0.Normalize();
+        //        P1.Normalize();
+        //        P2.Normalize();
+        //        P3.Normalize();
+        //        P4.Normalize();
+        //        P5.Normalize();
+        //        P6.Normalize();
+        //        P7.Normalize();
+        //        P8.Normalize();
+        //        P9.Normalize();
+        //        P10.Normalize();
+        //        P11.Normalize();
 
-                P = new Hare.Geometry.Point[20 * (int)Math.Pow(4, order)][];
+        //        P = new Hare.Geometry.Point[20 * (int)Math.Pow(4, order)][];
 
-                //Create the icosahedron's 20 triangular faces
-                triangle(P0, P1, P2, 0, order);
-                triangle(P3, P2, P1, 0, order);
-                triangle(P3, P4, P5, 0, order);
-                triangle(P3, P8, P4, 0, order);
-                triangle(P0, P6, P7, 0, order);
-                triangle(P0, P9, P6, 0, order);
-                triangle(P4, P10, P11, 0, order);
-                triangle(P6, P11, P10, 0, order);
-                triangle(P2, P5, P9, 0, order);
-                triangle(P11, P9, P5, 0, order);
-                triangle(P1, P7, P8, 0, order);
-                triangle(P10, P8, P7, 0, order);
-                triangle(P3, P5, P2, 0, order);
-                triangle(P3, P1, P8, 0, order);
-                triangle(P0, P2, P9, 0, order);
-                triangle(P0, P7, P1, 0, order);
-                triangle(P6, P9, P11, 0, order);
-                triangle(P6, P10, P7, 0, order);
-                triangle(P4, P11, P5, 0, order);
-                triangle(P4, P8, P10, 0, order);
+        //        //Create the icosahedron's 20 triangular faces
+        //        triangle(P0, P1, P2, 0, order);
+        //        triangle(P3, P2, P1, 0, order);
+        //        triangle(P3, P4, P5, 0, order);
+        //        triangle(P3, P8, P4, 0, order);
+        //        triangle(P0, P6, P7, 0, order);
+        //        triangle(P0, P9, P6, 0, order);
+        //        triangle(P4, P10, P11, 0, order);
+        //        triangle(P6, P11, P10, 0, order);
+        //        triangle(P2, P5, P9, 0, order);
+        //        triangle(P11, P9, P5, 0, order);
+        //        triangle(P1, P7, P8, 0, order);
+        //        triangle(P10, P8, P7, 0, order);
+        //        triangle(P3, P5, P2, 0, order);
+        //        triangle(P3, P1, P8, 0, order);
+        //        triangle(P0, P2, P9, 0, order);
+        //        triangle(P0, P7, P1, 0, order);
+        //        triangle(P6, P9, P11, 0, order);
+        //        triangle(P6, P10, P7, 0, order);
+        //        triangle(P4, P11, P5, 0, order);
+        //        triangle(P4, P8, P10, 0, order);
 
-                T = new Topology(P);
-            }
+        //        T = new Topology(P);
+        //    }
 
-            private void triangle(Vector P0, Vector P1, Vector P2, int Ord, int max)
-            {
-                if (Ord < max)
-                {
-                    Vector P3 = (P0 + P1) / 2;
-                    P3.Normalize();
+        //    private void triangle(Vector P0, Vector P1, Vector P2, int Ord, int max)
+        //    {
+        //        if (Ord < max)
+        //        {
+        //            Vector P3 = (P0 + P1) / 2;
+        //            P3.Normalize();
 
-                    Vector P4 = (P1 + P2) / 2;
-                    P4.Normalize();
+        //            Vector P4 = (P1 + P2) / 2;
+        //            P4.Normalize();
 
-                    Vector P5 = (P2 + P0) / 2;
-                    P5.Normalize();
+        //            Vector P5 = (P2 + P0) / 2;
+        //            P5.Normalize();
 
-                    this.triangle(P0, P3, P5, Ord + 1, max);
-                    this.triangle(P1, P4, P3, Ord + 1, max);
-                    this.triangle(P2, P5, P4, Ord + 1, max);
-                    this.triangle(P3, P4, P5, Ord + 1, max);
-                }
-                else
-                {
-                    P[Fnum] = new Hare.Geometry.Point[3] { P0, P1, P2 };
-                    Fnum++;
-                }
-            }
+        //            this.triangle(P0, P3, P5, Ord + 1, max);
+        //            this.triangle(P1, P4, P3, Ord + 1, max);
+        //            this.triangle(P2, P5, P4, Ord + 1, max);
+        //            this.triangle(P3, P4, P5, Ord + 1, max);
+        //        }
+        //        else
+        //        {
+        //            P[Fnum] = new Hare.Geometry.Point[3] { P0, P1, P2 };
+        //            Fnum++;
+        //        }
+        //    }
 
-            public override BroadRay Directions(int index, int thread, ref Random random)
-            {
-                return new BroadRay(H_Center, SrcDirections[index], random.Next(), thread, SourcePower, phase, delay, Source_ID());
-            }
+        //    public override BroadRay Directions(int index, int thread, ref Random random)
+        //    {
+        //        return new BroadRay(H_Center, SrcDirections[index], random.Next(), thread, SourcePower, phase, delay, Source_ID());
+        //    }
 
-            public override BroadRay Directions(int index, int thread, ref Random random, int[] Octaves)
-            {
-                return new BroadRay(H_Center, SrcDirections[index], random.Next(), thread, SourcePower, phase, delay, Source_ID(), Octaves);
-            }
+        //    public override BroadRay Directions(int index, int thread, ref Random random, int[] Octaves)
+        //    {
+        //        return new BroadRay(H_Center, SrcDirections[index], random.Next(), thread, SourcePower, phase, delay, Source_ID(), Octaves);
+        //    }
 
-            //public override double[][] Pressure(double distance, Vector dir, int thread, int random, double Rho_C)
-            //{
-            //    double[] power = DirPower(thread, random, dir);
-            //    double[] pres = new double[8];
+        //    //public override double[][] Pressure(double distance, Vector dir, int thread, int random, double Rho_C)
+        //    //{
+        //    //    double[] power = DirPower(thread, random, dir);
+        //    //    double[] pres = new double[8];
 
-            //    double factor = Rho_C / (4 * Math.PI * distance * distance);
+        //    //    double factor = Rho_C / (4 * Math.PI * distance * distance);
 
-            //    for (int oct = 0; oct < 8; oct++)
-            //    {
-            //        pres[oct] = (float)Math.Sqrt(power[oct] * factor);
-            //    }
+        //    //    for (int oct = 0; oct < 8; oct++)
+        //    //    {
+        //    //        pres[oct] = (float)Math.Sqrt(power[oct] * factor);
+        //    //    }
 
-            //    double[][] OctavePressure = new double[8][];
+        //    //    double[][] OctavePressure = new double[8][];
 
-            //    Audio.Pach_SP.Minimum_Phase_Signal(pres, 44100, thread, ref OctavePressure);
+        //    //    Audio.Pach_SP.Minimum_Phase_Signal(pres, 44100, thread, ref OctavePressure);
 
-            //    return OctavePressure;
-            //}
+        //    //    return OctavePressure;
+        //    //}
 
-            //public override double[] Signal_by_Distance(double distance, Vector dir, int thread, int random, double Rho_C)
-            //{
-            //    double[] power = DirPower(thread, random, dir);
-            //    double[] pres = new double[8];
+        //    //public override double[] Signal_by_Distance(double distance, Vector dir, int thread, int random, double Rho_C)
+        //    //{
+        //    //    double[] power = DirPower(thread, random, dir);
+        //    //    double[] pres = new double[8];
 
-            //    double factor = Rho_C / (4 * Math.PI * distance * distance);
+        //    //    double factor = Rho_C / (4 * Math.PI * distance * distance);
 
-            //    for (int oct = 0; oct < 8; oct++)
-            //    {
-            //        pres[oct] = (float)Math.Sqrt(power[oct] * factor);
-            //    }
+        //    //    for (int oct = 0; oct < 8; oct++)
+        //    //    {
+        //    //        pres[oct] = (float)Math.Sqrt(power[oct] * factor);
+        //    //    }
 
-            //    double[][] OctavePressure = new double[8][];
+        //    //    double[][] OctavePressure = new double[8][];
 
-            //    return Audio.Pach_SP.Minimum_Phase_Signal(pres, 44100, 8192, thread);
-            //}
-        }
+        //    //    return Audio.Pach_SP.Minimum_Phase_Signal(pres, 44100, 8192, thread);
+        //    //}
+        //}
     }
 }

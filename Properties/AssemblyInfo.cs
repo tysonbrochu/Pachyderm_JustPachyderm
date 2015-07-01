@@ -1,19 +1,19 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Rhino.PlugIns;
+//using Rhino.PlugIns;
 
 
-// Plug-in Description Attributes - all of these are optional
-// These will show in Rhino's option dialog, in the tab Plug-ins
-[assembly: PlugInDescription(DescriptionType.Address, "-")]
-[assembly: PlugInDescription(DescriptionType.Country, "United Kingdom")]
-[assembly: PlugInDescription(DescriptionType.Email, "Pach.Acoustic.Sim@Gmail.com")]
-[assembly: PlugInDescription(DescriptionType.Phone, "-")]
-[assembly: PlugInDescription(DescriptionType.Fax, "-")]
-[assembly: PlugInDescription(DescriptionType.Organization, "-")]
-[assembly: PlugInDescription(DescriptionType.UpdateUrl, "-")]
-[assembly: PlugInDescription(DescriptionType.WebSite, "http://www.perspectivesketch.com/pachyderm/")]
+//// Plug-in Description Attributes - all of these are optional
+//// These will show in Rhino's option dialog, in the tab Plug-ins
+//[assembly: PlugInDescription(DescriptionType.Address, "-")]
+//[assembly: PlugInDescription(DescriptionType.Country, "United Kingdom")]
+//[assembly: PlugInDescription(DescriptionType.Email, "Pach.Acoustic.Sim@Gmail.com")]
+//[assembly: PlugInDescription(DescriptionType.Phone, "-")]
+//[assembly: PlugInDescription(DescriptionType.Fax, "-")]
+//[assembly: PlugInDescription(DescriptionType.Organization, "-")]
+//[assembly: PlugInDescription(DescriptionType.UpdateUrl, "-")]
+//[assembly: PlugInDescription(DescriptionType.WebSite, "http://www.perspectivesketch.com/pachyderm/")]
 
 
 // General Information about an assembly is controlled through the following 
