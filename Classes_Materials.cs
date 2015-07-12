@@ -18,9 +18,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MathNet.Numerics;
 
 namespace Pachyderm_Acoustic
 {
@@ -32,11 +30,11 @@ namespace Pachyderm_Acoustic
             public abstract void Absorb(ref BroadRay Ray, Hare.Geometry.Vector Normal);
             public abstract void Absorb(ref OctaveRay Ray, out double cos_theta, Hare.Geometry.Vector Normal);
             public abstract void Absorb(ref BroadRay Ray, out double cos_theta, Hare.Geometry.Vector Normal);
-            public abstract System.Numerics.Complex Reflection_Narrow(double frequency);
-            public abstract System.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal);
+            public abstract Complex Reflection_Narrow(double frequency);
+            public abstract Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal);
             public abstract double Coefficient_A_Broad(int Octave);
             public abstract double[] Coefficient_A_Broad();
-            public abstract System.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid);
+            public abstract Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid);
         }
 
         public abstract class Scattering 
@@ -53,7 +51,7 @@ namespace Pachyderm_Acoustic
             double[] Abs = new double[8];
             double[] Ref = new double[8];
             double[] PD = new double[8];
-            MathNet.Numerics.Interpolation.CubicSpline Transfer_Function;
+            MathNet.Numerics.Interpolation.IInterpolationMethod Transfer_Function;
 
             public Basic_Material(double[] ABS, double[] Phase_Delay)
             {
@@ -89,16 +87,16 @@ namespace Pachyderm_Acoustic
                 if (pr.Count < f.Count) pr.Add(Math.Sqrt(1 - Abs[7]));//16k
                 while (pr.Count < f.Count) pr.Add(1 - Abs[7]);
 
-                Transfer_Function = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkimaSorted(f.ToArray(), pr.ToArray());
+                Transfer_Function = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(f.ToArray(), pr.ToArray());
             }
 
-            public override System.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
+            public override MathNet.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
             {
-                System.Numerics.Complex[] Ref_trns = new System.Numerics.Complex[length];
+                MathNet.Numerics.Complex[] Ref_trns = new MathNet.Numerics.Complex[length];
 
                 for (int j = 0; j < length; j++)
                 {
-                    Ref_trns[j] = new System.Numerics.Complex(Transfer_Function.Interpolate(j * (sample_frequency / 2) / length), 0);
+                    Ref_trns[j] = new MathNet.Numerics.Complex(Transfer_Function.Interpolate(j * (sample_frequency / 2) / length), 0);
                 }
 
                 return Ref_trns;
@@ -170,14 +168,14 @@ namespace Pachyderm_Acoustic
                 return Abs[Octave];
             }
 
-            public override System.Numerics.Complex Reflection_Narrow(double frequency)
+            public override MathNet.Numerics.Complex Reflection_Narrow(double frequency)
             {
-                return new System.Numerics.Complex(Transfer_Function.Interpolate(frequency), 0);
+                return new MathNet.Numerics.Complex(Transfer_Function.Interpolate(frequency), 0);
             }
 
-            public override System.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
+            public override MathNet.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
             {
-                return new System.Numerics.Complex(Transfer_Function.Interpolate(frequency), 0);
+                return new MathNet.Numerics.Complex(Transfer_Function.Interpolate(frequency), 0);
             }
         }
 
@@ -196,7 +194,7 @@ namespace Pachyderm_Acoustic
         //        Azimuth = new double[36];
         //        Altitude = new double[Mat.Angles.Length/2];
         //        alpha = new double[Altitude.Length][][];
-        //        for(int i = 0; i < Altitude.Length; i++) Altitude[i] = Mat.Angles[i].Magnitude;
+        //        for(int i = 0; i < Altitude.Length; i++) Altitude[i] = Mat.Angles[i].Modulus;
         //        for(int i = 0; i < Azimuth.Length; i++) Azimuth[i] = i * 360f / Azimuth.Length;
 
         //            //Set up a frequency interpolated Zr for each direction individually.
@@ -220,30 +218,30 @@ namespace Pachyderm_Acoustic
         //            for (int oct = 0; oct < 9; oct++)
         //            {
         //                fr[oct] = 62.5 * Math.Pow(2, oct) / Utilities.Numerics.rt2;
-        //                System.Numerics.Complex[][] Zr = AbsorptionModels.Operations.Finite_Radiation_Impedance_Rect_Longhand(pt.x, pt.y, Br, fr[oct], Altitude, Azimuth, med.Sound_Speed(pt));
+        //                MathNet.Numerics.Complex[][] Zr = AbsorptionModels.Operations.Finite_Radiation_Impedance_Rect_Longhand(pt.x, pt.y, Br, fr[oct], Altitude, Azimuth, med.Sound_Speed(pt));
 
         //                for (int k = 0; k < Zr.Length; k++)
         //                {
         //                    for (int j = 0; j < Zr[k].Length; j++)
         //                    {
         //                        ZrR[k][j][oct] = Zr[k][j].Real;
-        //                        ZrI[k][j][oct] = Zr[k][j].Imaginary;
+        //                        ZrI[k][j][oct] = Zr[k][j].Imag;
         //                    }
         //                }
         //            }
 
-        //            MathNet.Numerics.Interpolation.CubicSpline[][] Zr_r = new MathNet.Numerics.Interpolation.CubicSpline[Altitude.Length][];
-        //            MathNet.Numerics.Interpolation.CubicSpline[][] Zr_i = new MathNet.Numerics.Interpolation.CubicSpline[Altitude.Length][];
+        //            MathNet.Numerics.Interpolation.IInterpolationMethod[][] Zr_r = new MathNet.Numerics.Interpolation.IInterpolationMethod[Altitude.Length][];
+        //            MathNet.Numerics.Interpolation.IInterpolationMethod[][] Zr_i = new MathNet.Numerics.Interpolation.IInterpolationMethod[Altitude.Length][];
 
         //            for (int k = 0; k < Zr_r.Length; k++)
         //            {
-        //                Zr_r[k] = new MathNet.Numerics.Interpolation.CubicSpline[Azimuth.Length];
-        //                Zr_i[k] = new MathNet.Numerics.Interpolation.CubicSpline[Azimuth.Length];
+        //                Zr_r[k] = new MathNet.Numerics.Interpolation.IInterpolationMethod[Azimuth.Length];
+        //                Zr_i[k] = new MathNet.Numerics.Interpolation.IInterpolationMethod[Azimuth.Length];
         //                for (int j = 0; j < Zr_r[k].Length; j++)
         //                {
         //                    //Interpolate over curve real and imaginary Zr here...
-        //                    Zr_r[k][j] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(fr, ZrR[k][j]);
-        //                    Zr_i[k][j] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(fr, ZrI[k][j]);
+        //                    Zr_r[k][j] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(fr, ZrR[k][j]);
+        //                    Zr_i[k][j] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(fr, ZrI[k][j]);
         //                }
         //            }
 
@@ -257,9 +255,9 @@ namespace Pachyderm_Acoustic
         //                    {
         //                        if (Mat.frequency[l] > 10000) break;
         //                        freq.Add(Mat.frequency[l]);
-        //                        alpha_interp.Add(AbsorptionModels.Operations.Finite_Unit_Absorption_Coefficient(Mat.Z[k][j], new System.Numerics.Complex(Zr_r[k][j].Interpolate(Mat.frequency[l]), Zr_i[k][j].Interpolate(Mat.frequency[l])), med.Rho(Utilities.PachTools.RPttoHPt(pt)), med.Sound_Speed(pt)));
+        //                        alpha_interp.Add(AbsorptionModels.Operations.Finite_Unit_Absorption_Coefficient(Mat.Z[k][j], new MathNet.Numerics.Complex(Zr_r[k][j].Interpolate(Mat.frequency[l]), Zr_i[k][j].Interpolate(Mat.frequency[l])), med.Rho(Utilities.PachTools.RPttoHPt(pt)), med.Sound_Speed(pt)));
         //                    }
-        //                    MathNet.Numerics.Interpolation.CubicSpline a = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(freq, alpha_interp);
+        //                    MathNet.Numerics.Interpolation.IInterpolationMethod a = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(freq, alpha_interp);
         //                    for (int oct = 0; oct < 8; oct++)
         //                    {
         //                        alpha[k][j][oct] = 1 - a.Integrate(fr[oct], fr[oct + 1]) / (fr[oct + 1] - fr[oct]);
@@ -323,17 +321,17 @@ namespace Pachyderm_Acoustic
         //        return Inf_Mat.Coefficient_A_Broad(Octave);
         //    }
 
-        //    public override System.Numerics.Complex Reflection_Narrow(double frequency)
+        //    public override MathNet.Numerics.Complex Reflection_Narrow(double frequency)
         //    {
         //        return Inf_Mat.Reflection_Narrow(frequency);
         //    }
 
-        //    public override System.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
+        //    public override MathNet.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
         //    {
         //        return Inf_Mat.Reflection_Narrow(frequency, Dir, Normal);
         //    }
 
-        //    public override System.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
+        //    public override MathNet.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
         //    {
         //        return Inf_Mat.Reflection_Spectrum(sample_frequency, length, Normal, Dir, threadid);
         //    }
@@ -346,11 +344,11 @@ namespace Pachyderm_Acoustic
             double rho;
             double c;
             public double[] frequency = null;
-            public System.Numerics.Complex[] Angles = null;
-            public System.Numerics.Complex[][] Z;
-            public MathNet.Numerics.Interpolation.CubicSpline[] Transfer_FunctionR;
-            public MathNet.Numerics.Interpolation.CubicSpline[] Transfer_FunctionI;
-            public System.Numerics.Complex[][] Reflection_Coefficient;
+            public MathNet.Numerics.Complex[] Angles = null;
+            public MathNet.Numerics.Complex[][] Z;
+            public MathNet.Numerics.Interpolation.IInterpolationMethod[] Transfer_FunctionR;
+            public MathNet.Numerics.Interpolation.IInterpolationMethod[] Transfer_FunctionI;
+            public MathNet.Numerics.Complex[][] Reflection_Coefficient;
             public double[] NI_Coef;
             public double[][] Ang_Coef_Oct;//[oct][angle]
             public double[] RI_Coef = new double[8];
@@ -378,7 +376,7 @@ namespace Pachyderm_Acoustic
                 
                 double[][] Angular_Absorption;
 
-                System.Numerics.Complex [][] Zr_interp = Zr.Interpolate(frequency);
+                MathNet.Numerics.Complex [][] Zr_interp = Zr.Interpolate(frequency);
 
                 if (Zf_incorp_Choice == 0)
                 {
@@ -392,18 +390,18 @@ namespace Pachyderm_Acoustic
                 }
                 else throw new Exception("Field Impedance Incorporation choice not valid or not implemented...");
 
-                Transfer_FunctionR = new MathNet.Numerics.Interpolation.CubicSpline[Angles.Length / 2];
-                Transfer_FunctionI = new MathNet.Numerics.Interpolation.CubicSpline[Angles.Length / 2];
+                Transfer_FunctionR = new MathNet.Numerics.Interpolation.IInterpolationMethod[Angles.Length / 2];
+                Transfer_FunctionI = new MathNet.Numerics.Interpolation.IInterpolationMethod[Angles.Length / 2];
                 for(    int i = 0; i < Reflection_Coefficient.Length / 2; i++)
                 {
                     List<double> real = new List<double>(), imag = new List<double>();
                     for(int j = 0; j < Reflection_Coefficient[i].Length; j++)
                     {
                         real.Add(Reflection_Coefficient[i][j].Real);
-                        imag.Add(Reflection_Coefficient[i][j].Imaginary);
+                        imag.Add(Reflection_Coefficient[i][j].Imag);
                     }
-                    Transfer_FunctionR[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(frequency, real);
-                    Transfer_FunctionI[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(frequency, imag);
+                    Transfer_FunctionR[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(frequency, real);
+                    Transfer_FunctionI[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(frequency, imag);
                 }
                 double[] RI_Averages;
 
@@ -502,18 +500,18 @@ namespace Pachyderm_Acoustic
                 
                 Reflection_Coefficient = Pachyderm_Acoustic.AbsorptionModels.Operations.Reflection_Coef(Z, Air_Density, SoundSpeed);
 
-                Transfer_FunctionR = new MathNet.Numerics.Interpolation.CubicSpline[Angles.Length / 2];
-                Transfer_FunctionI = new MathNet.Numerics.Interpolation.CubicSpline[Angles.Length / 2];
+                Transfer_FunctionR = new MathNet.Numerics.Interpolation.IInterpolationMethod[Angles.Length / 2];
+                Transfer_FunctionI = new MathNet.Numerics.Interpolation.IInterpolationMethod[Angles.Length / 2];
                 for (int i = 0; i < Reflection_Coefficient.Length / 2; i++)
                 {
                     List<double> real = new List<double>(), imag = new List<double>();
                     for (int j = 0; j < Reflection_Coefficient[i].Length; j++)
                     {
                         real.Add(Reflection_Coefficient[i][j].Real);
-                        imag.Add(Reflection_Coefficient[i][j].Imaginary);
+                        imag.Add(Reflection_Coefficient[i][j].Imag);
                     }
-                    Transfer_FunctionR[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(frequency, real);
-                    Transfer_FunctionI[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(frequency, imag);
+                    Transfer_FunctionR[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(frequency, real);
+                    Transfer_FunctionI[Angles.Length/2 - i - 1] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(frequency, imag);
                 }
                 
                 double[][] Angular_Absorption = Pachyderm_Acoustic.AbsorptionModels.Operations.Absorption_Coef(Reflection_Coefficient);
@@ -614,24 +612,24 @@ namespace Pachyderm_Acoustic
                 return RI_Coef[Octave];
             }
 
-            public override System.Numerics.Complex Reflection_Narrow(double frequency)
+            public override MathNet.Numerics.Complex Reflection_Narrow(double frequency)
             {
-                System.Numerics.Complex alpha = 0;
-                for(int a = 0; a < Transfer_FunctionR.Length; a++) alpha += new System.Numerics.Complex(Transfer_FunctionR[a].Interpolate(frequency), Transfer_FunctionI[a].Interpolate(frequency)); 
+                MathNet.Numerics.Complex alpha = 0;
+                for(int a = 0; a < Transfer_FunctionR.Length; a++) alpha += new MathNet.Numerics.Complex(Transfer_FunctionR[a].Interpolate(frequency), Transfer_FunctionI[a].Interpolate(frequency)); 
                 alpha /= Transfer_FunctionR.Length;
                 return alpha;
             }
 
-            public override System.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
+            public override MathNet.Numerics.Complex Reflection_Narrow(double frequency, Hare.Geometry.Vector Dir, Hare.Geometry.Vector Normal)
             {
                 int a = (int)(Math.Abs(Hare.Geometry.Hare_math.Dot(Dir, Normal))*180/Math.PI / 18);
-                return new System.Numerics.Complex(Transfer_FunctionR[a].Interpolate(frequency), Transfer_FunctionI[a].Interpolate(frequency));
+                return new MathNet.Numerics.Complex(Transfer_FunctionR[a].Interpolate(frequency), Transfer_FunctionI[a].Interpolate(frequency));
             }
 
             public  class Finite_Field_Impedance
             {
-                MathNet.Numerics.Interpolation.CubicSpline[] Zr_Curves_R;
-                MathNet.Numerics.Interpolation.CubicSpline[] Zr_Curves_I;
+                MathNet.Numerics.Interpolation.IInterpolationMethod[] Zr_Curves_R;
+                MathNet.Numerics.Interpolation.IInterpolationMethod[] Zr_Curves_I;
 
                 public Finite_Field_Impedance(double Xdim, double Ydim, double freq_limit, double c_sound, double air_density)
                 {
@@ -648,10 +646,10 @@ namespace Pachyderm_Acoustic
                     anglesdeg[0] = -87.5;
                     for (int i = 1; i < anglesdeg.Length; i++) anglesdeg[i] = anglesdeg[i-1] + 5;
 
-                    System.Numerics.Complex[][] Zr = AbsorptionModels.Operations.Finite_Radiation_Impedance_Atalla_Rect(Xdim, Ydim, freq.ToArray(), anglesdeg, c_sound, air_density);
+                    MathNet.Numerics.Complex[][] Zr = AbsorptionModels.Operations.Finite_Radiation_Impedance_Atalla_Rect(Xdim, Ydim, freq.ToArray(), anglesdeg, c_sound, air_density);
 
-                    Zr_Curves_R = new MathNet.Numerics.Interpolation.CubicSpline[Zr[0].Length];
-                    Zr_Curves_I = new MathNet.Numerics.Interpolation.CubicSpline[Zr[0].Length];
+                    Zr_Curves_R = new MathNet.Numerics.Interpolation.IInterpolationMethod[Zr[0].Length];
+                    Zr_Curves_I = new MathNet.Numerics.Interpolation.IInterpolationMethod[Zr[0].Length];
                     for (int a = 0; a < Zr_Curves_R.Length; a++)
                     {
                         double[] ZR = new double[freq.Count];
@@ -659,39 +657,39 @@ namespace Pachyderm_Acoustic
                         for (int fr = 0; fr < freq.Count; fr++)
                         {
                             ZR[fr] = Zr[fr][a].Real;
-                            ZI[fr] = Zr[fr][a].Imaginary;
+                            ZI[fr] = Zr[fr][a].Imag;
                         }
-                        Zr_Curves_R[a] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(freq, ZR);
-                        Zr_Curves_I[a] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(freq, ZI);
+                        Zr_Curves_R[a] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(freq, ZR);
+                        Zr_Curves_I[a] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(freq, ZI);
                     }
                 }
                 
-                public System.Numerics.Complex[][] Interpolate(double[] freq)
+                public MathNet.Numerics.Complex[][] Interpolate(double[] freq)
                 {
-                    System.Numerics.Complex[][] Zr = new System.Numerics.Complex[freq.Length][];
+                    MathNet.Numerics.Complex[][] Zr = new MathNet.Numerics.Complex[freq.Length][];
 
                     for (int f = 0; f < freq.Length; f++)
                     {
-                        Zr[f] = new System.Numerics.Complex[Zr_Curves_R.Length];
+                        Zr[f] = new MathNet.Numerics.Complex[Zr_Curves_R.Length];
                         for (int a = 0; a < Zr_Curves_R.Length; a++)
                         {
-                            Zr[f][a] = new System.Numerics.Complex(Zr_Curves_R[a].Interpolate(freq[f]), Zr_Curves_I[a].Interpolate(freq[f]));
+                            Zr[f][a] = new MathNet.Numerics.Complex(Zr_Curves_R[a].Interpolate(freq[f]), Zr_Curves_I[a].Interpolate(freq[f]));
                         }
                     }
                     return Zr;
                 }
             }
 
-            public override System.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
+            public override MathNet.Numerics.Complex[] Reflection_Spectrum(int sample_frequency, int length, Hare.Geometry.Vector Normal, Hare.Geometry.Vector Dir, int threadid)
             {
                 int a = (int)(Math.Abs(Hare.Geometry.Hare_math.Dot(Dir, Normal))*180/Math.PI / 18);
 
-                System.Numerics.Complex[] Ref_trns = new System.Numerics.Complex[length];
+                MathNet.Numerics.Complex[] Ref_trns = new MathNet.Numerics.Complex[length];
 
                 for (int j = 0; j < length; j++)
                 {
                     double freq = j * (sample_frequency / 2) / length;
-                    Ref_trns[j] = new System.Numerics.Complex(Transfer_FunctionR[a].Interpolate(freq), Transfer_FunctionI[a].Interpolate(freq));
+                    Ref_trns[j] = new MathNet.Numerics.Complex(Transfer_FunctionR[a].Interpolate(freq), Transfer_FunctionI[a].Interpolate(freq));
                 }
 
                 return Ref_trns;

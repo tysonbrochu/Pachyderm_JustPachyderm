@@ -18,8 +18,7 @@
 
 using System.Collections.Generic;
 using System;
-using Pachyderm_Acoustic.Environment;
-using System.Linq;
+using Pachyderm_Acoustic.Environment;  
 using Hare.Geometry;
 
 namespace Pachyderm_Acoustic
@@ -64,18 +63,18 @@ namespace Pachyderm_Acoustic
                 return Math.Sqrt((re * re) + (im * im));
             }
 
-            public static System.Numerics.Complex jBessel(int order, System.Numerics.Complex X)
+            public static MathNet.Numerics.Complex jBessel(int order, MathNet.Numerics.Complex X)
             {
                 //if (order < 1) throw new NotFiniteNumberException();
                 //Asymptotic Solution
                 //Get Angle
-                double Arg = X.Phase;
-                //double Arg = Math.Atan2(X.Imaginary, X.Real);                 
+                double Arg = X.Argument;
+                //double Arg = Math.Atan2(X.Imag, X.Real);                 
                 int asy_sign = (Arg >= 0) ? -1 : 1;
 
-                return (1 / System.Numerics.Complex.Sqrt(2 * Math.PI * X)) * System.Numerics.Complex.Exp(asy_sign * System.Numerics.Complex.ImaginaryOne * (X - order * Math.PI / 2 - Math.PI / 4));
+                return (1 / (2 * Math.PI * X).SquareRoot()) * (asy_sign * MathNet.Numerics.Complex.I * (X - order * Math.PI / 2 - Math.PI / 4)).Exponential();
 
-                //System.Numerics.Complex J;
+                //MathNet.Numerics.Complex J;
                 //int ntmfact;
                 //if (order == 0)
                 //{ 
@@ -91,9 +90,9 @@ namespace Pachyderm_Acoustic
                 //{
                 //    ntmfact = 1;
                 //    for (int i = 1; i <= order; i++) ntmfact *= i;
-                //    System.Numerics.Complex.Pow(X, order);
+                //    MathNet.Numerics.Complex.Pow(X, order);
                 //}
-                //System.Numerics.Complex series_sum = - X * X *.25;
+                //MathNet.Numerics.Complex series_sum = - X * X *.25;
 
                 //int mfact = 1;
                 //int t1 = 1;
@@ -104,25 +103,25 @@ namespace Pachyderm_Acoustic
                 //    mfact *= m;
                 //    ntmfact *= (m + order);
 
-                //    series_sum += t1 * System.Numerics.Complex.Pow(X, 2 * m) / (Math.Pow(2, 2 * m + order) * mfact * ntmfact);
+                //    series_sum += t1 * MathNet.Numerics.Complex.Pow(X, 2 * m) / (Math.Pow(2, 2 * m + order) * mfact * ntmfact);
                 //}
 
-                //return series_sum * System.Numerics.Complex.Pow(X, order);
+                //return series_sum * MathNet.Numerics.Complex.Pow(X, order);
 
-                //System.Numerics.Complex z, zproduct, zanswer, zarg;
+                //MathNet.Numerics.Complex z, zproduct, zanswer, zarg;
                 //double k;
                 //int i;
                 //if (order > 2 || order < 0) throw new Exception("Order of Bessel function of first kind must be 0, 1 or 2");
-                //z = System.Numerics.Complex.One;
-                //zproduct = System.Numerics.Complex.One;
-                //zanswer = System.Numerics.Complex.One;
+                //z = MathNet.Numerics.Complex.One;
+                //zproduct = MathNet.Numerics.Complex.One;
+                //zanswer = MathNet.Numerics.Complex.One;
                 //zarg = -0.25 * (X * X);
 
                 //for (i = 0; i < 1000; i++)
                 //{
                 //    k = (i + 1) * (i + 1 + order);
                 //    z = (1 / (k)) * (z * zarg);
-                //    if (System.Numerics.Complex.Abs(z) < 1e-20) break;
+                //    if (MathNet.Numerics.Complex.Abs(z) < 1e-20) break;
                 //    zanswer = zanswer + z;
                 //}
 
@@ -132,12 +131,12 @@ namespace Pachyderm_Acoustic
 
                 //if (order > 2 || order < 0) throw new Exception("Order of greater than 2, or less than zero not allowed");
 
-                //System.Numerics.Complex z = 1, z_final = 1, z_int = -0.25 * (X * X);;
+                //MathNet.Numerics.Complex z = 1, z_final = 1, z_int = -0.25 * (X * X);;
 
                 //for(int i = 0; i < 1000; i++)
                 //{
                 //    z *= z_int / ((i + 1)*(i + 1 + order));
-                //    if ((z.Real*z.Real + z.Imaginary * z.Imaginary) < 1e-22) break;
+                //    if ((z.Real*z.Real + z.Imag * z.Imag) < 1e-22) break;
                 //    z_final += z;
                 //}
 
@@ -220,7 +219,7 @@ namespace Pachyderm_Acoustic
                 public static double[] SPLTCurve_Pressure(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, int SrcID, bool Start_at_Zero)
                 {
                     double[] P;//, Imag;
-                    //double[] Pressure = PTCurve(Direct, ISData, RTData, CO_Time, samplerate, Octave, Rec_ID, SrcID, Start_at_Zero, Numerics.ComplexComponent.Magnitude);
+                    //double[] Pressure = PTCurve(Direct, ISData, RTData, CO_Time, samplerate, Octave, Rec_ID, SrcID, Start_at_Zero, Numerics.ComplexComponent.Modulus);
                     PTCurve(Direct, ISData, RTData, CO_Time, samplerate, Rec_ID, SrcID, Start_at_Zero, out P);//, out Imag);
                     float[] Pressure = new float[P.Length];
                     //for (int i = 0; i < Pressure.Length; i++) Pressure[i] = Numerics.Abs(Real[i], Imag[i]);
@@ -269,7 +268,7 @@ namespace Pachyderm_Acoustic
 
                     List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if (Direct[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -277,7 +276,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if (RTData[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -317,7 +316,7 @@ namespace Pachyderm_Acoustic
 
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if (Direct[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -325,7 +324,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if (RTData[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -514,7 +513,7 @@ namespace Pachyderm_Acoustic
 
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if ((Direct as List<Direct_Sound>)[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -522,7 +521,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if ((RTData as List<Receiver_Bank>)[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -539,7 +538,7 @@ namespace Pachyderm_Acoustic
 
                     foreach (int s in SrcIDs)
                     {
-                        double[][] IR = ETCurve_1d_Tight(Direct.ElementAt<Direct_Sound>(s), ISData.ElementAt<ImageSourceData>(s), RTData.ElementAt<Receiver_Bank>(s), CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
+                        double[][] IR = ETCurve_1d_Tight((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
                         //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
                         for (int d = 0; d < 3; d++)
                         {
@@ -683,7 +682,7 @@ namespace Pachyderm_Acoustic
 
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if ((Direct as List<Direct_Sound>)[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -691,7 +690,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if ((RTData as List<Receiver_Bank>)[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -708,7 +707,7 @@ namespace Pachyderm_Acoustic
 
                 foreach (int s in SrcIDs)
                 {
-                    double[][] IR = ETCurve_1d(Direct.ElementAt<Direct_Sound>(s), ISData.ElementAt<ImageSourceData>(s), RTData.ElementAt<Receiver_Bank>(s), CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
+                    double[][] IR = ETCurve_1d((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
                     //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
                     for (int d = 0; d < 3; d++)
                     {
@@ -820,7 +819,7 @@ namespace Pachyderm_Acoustic
                     double maxdelay = 0;
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if ((Direct as List<Direct_Sound>)[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -828,7 +827,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if ((RTData as List<Receiver_Bank>)[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -843,7 +842,7 @@ namespace Pachyderm_Acoustic
 
                     foreach (int s in SrcIDs)
                     {
-                        double[] IR = ETCurve_Directional(Direct.ElementAt<Direct_Sound>(s), ISData.ElementAt<ImageSourceData>(s), RTData.ElementAt<Receiver_Bank>(s), CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
+                        double[] IR = ETCurve_Directional((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
                         //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
                         //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
                         for (int i = 0; i < IR.Length; i++)
@@ -960,7 +959,7 @@ namespace Pachyderm_Acoustic
                     double maxdelay = 0;
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if ((Direct as List<Direct_Sound>)[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -968,7 +967,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if ((RTData as List<Receiver_Bank>)[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -986,7 +985,7 @@ namespace Pachyderm_Acoustic
 
                     foreach (int s in SrcIDs)
                     {
-                        double[][] IR = PTCurve_Ambisonics2(Direct.ElementAt<Direct_Sound>(s), ISData.ElementAt<ImageSourceData>(s), RTData.ElementAt<Receiver_Bank>(s), CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
+                        double[][] IR = PTCurve_Ambisonics2((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
                         //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
                         //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
                         for (int d = 0; d < IR.Length; d++)
@@ -1019,7 +1018,7 @@ namespace Pachyderm_Acoustic
                     double maxdelay = 0;
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if ((Direct as List<Direct_Sound>)[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -1027,7 +1026,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if ((RTData as List<Receiver_Bank>)[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -1047,7 +1046,7 @@ namespace Pachyderm_Acoustic
 
                     foreach (int s in SrcIDs)
                     {
-                        double[][] IR = PTCurve_Ambisonics3(Direct.ElementAt<Direct_Sound>(s), ISData.ElementAt<ImageSourceData>(s), RTData.ElementAt<Receiver_Bank>(s), CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
+                        double[][] IR = PTCurve_Ambisonics3((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
                         //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
                         //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
                         for (int d = 0; d < IR.Length; d++)
@@ -1319,7 +1318,7 @@ namespace Pachyderm_Acoustic
 
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if ((Direct as List<Direct_Sound>)[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -1327,7 +1326,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if ((RTData as List<Receiver_Bank>)[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -1344,7 +1343,7 @@ namespace Pachyderm_Acoustic
 
                     foreach (int s in SrcIDs)
                     {
-                        double[][] IR = PTCurve_Fig8_3Axis(Direct.ElementAt<Direct_Sound>(s), ISData.ElementAt<ImageSourceData>(s), RTData.ElementAt<Receiver_Bank>(s), CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
+                        double[][] IR = PTCurve_Fig8_3Axis((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
                         //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
                         //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
                         for (int d = 0; d < 3; d++)
@@ -1429,7 +1428,7 @@ namespace Pachyderm_Acoustic
                     double maxdelay = 0;
                 List<double> delays = new List<double>();
 
-                if (Direct.ElementAt<Direct_Sound>(0) != null)
+                if ((Direct as List<Direct_Sound>)[0] != null)
                 {
                     foreach (Direct_Sound d in Direct)
                     {
@@ -1437,7 +1436,7 @@ namespace Pachyderm_Acoustic
                         maxdelay = Math.Max(maxdelay, d.Delay_ms);
                     }
                 }
-                else if (RTData.ElementAt<Receiver_Bank>(0) != null)
+                else if ((RTData as List<Receiver_Bank>)[0] != null)
                 {
                     foreach (Receiver_Bank r in RTData)
                     {
@@ -1452,7 +1451,7 @@ namespace Pachyderm_Acoustic
 
                     foreach (int s in SrcIDs)
                     {
-                        double[] IR = PTCurve_Directional(Direct.ElementAt<Direct_Sound>(s), ISData.ElementAt<ImageSourceData>(s), RTData.ElementAt<Receiver_Bank>(s), CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
+                        double[] IR = PTCurve_Directional((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
                         //Array.Resize(ref Histogram, Histogram.Length + (int)Math.Ceiling(maxdelay));
                         //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
                         for (int i = 0; i < IR.Length; i++)
@@ -2077,7 +2076,8 @@ namespace Pachyderm_Acoustic
                     //PercentEcho[t] = Math.Min(50, Math.Max(10, PercentEcho[t]));
                 }
 
-                double max = PercentEcho.Max();
+                double max = PercentEcho[0];
+                for (int i = 1; i < PercentEcho.Length; i++) Math.Max(max, PercentEcho[i]);
 
                 Echo10 = false; Echo50 = false;
 
@@ -2868,9 +2868,9 @@ namespace Pachyderm_Acoustic
 
                 List<Receiver_Bank> R = new List<Receiver_Bank>();
 
-                for (int i = 0; i < Srcs.Count<Source>(); i++)
+                for (int i = 0; i < (Srcs as List<Source>).Count; i++)
                 {
-                    R.Add(new Receiver_Bank(ReceiverLocations, (Srcs.ElementAt<Source>(i)).Origin(), Sc, 1000, CutOffTime, (Srcs.ElementAt<Source>(i)).Delay, RecType));
+                    R.Add(new Receiver_Bank(ReceiverLocations, (Srcs as List<Source>)[i].Origin(), Sc, 1000, CutOffTime, (Srcs as List<Source>)[i].Delay, RecType));
                 }
 
                 return R; 
@@ -2904,9 +2904,9 @@ namespace Pachyderm_Acoustic
 
                 List<Receiver_Bank> R = new List<Receiver_Bank>();
 
-                for (int i = 0; i < Srcs.Count<Source>(); i++)
+                for (int i = 0; i < (Srcs as List<Source>).Count; i++)
                 {
-                    R.Add(new Receiver_Bank(ReceiverLocations, Srcs.ElementAt<Source>(i).Origin(), Sc, sample_rate, CutOffTime, Srcs.ElementAt<Source>(i).Delay, RecType));
+                    R.Add(new Receiver_Bank(ReceiverLocations, (Srcs as List<Source>)[i].Origin(), Sc, sample_rate, CutOffTime, (Srcs as List<Source>)[i].Delay, RecType));
                 }
 
                 return R;

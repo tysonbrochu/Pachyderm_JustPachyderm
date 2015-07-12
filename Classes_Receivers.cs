@@ -18,8 +18,7 @@
 
 using System;
 using System.Collections.Generic;
-using Hare.Geometry;
-using System.Linq;
+using Hare.Geometry;  
 
 namespace Pachyderm_Acoustic
 {
@@ -95,7 +94,7 @@ namespace Pachyderm_Acoustic
                 SampleCT = (int)Math.Floor(COTime_in * SampleRate_in / 1000);
                 this.CutOffTime = COTime_in;
                 Rec_Type = Type;
-                Point[] arrPts = Pt.ToArray<Point>();
+                Point[] arrPts = Pt as Point[];
                 Rec_List = new Spherical_Receiver[arrPts.Length];
                 Min = new Hare.Geometry.Point(double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity);
                 Max = new Hare.Geometry.Point(double.NegativeInfinity, double.NegativeInfinity, double.NegativeInfinity);
@@ -302,7 +301,7 @@ namespace Pachyderm_Acoustic
 
                 for (int q = 0; q < Rec_CT; q++)
                 {
-                    Rec.Rec_List[q].H_Origin = RecPts.ElementAt<Hare.Geometry.Point>(q);
+                    Rec.Rec_List[q].H_Origin = (RecPts as List<Hare.Geometry.Point>)[q];
                     Rec.Rec_List[q].Recs.Energy[0] = new double[SampleCT];
                     Rec.Rec_List[q].Recs.Energy[1] = new double[SampleCT];
                     Rec.Rec_List[q].Recs.Energy[2] = new double[SampleCT];

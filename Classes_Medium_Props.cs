@@ -17,10 +17,6 @@
 //'Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Pachyderm_Acoustic
 {
@@ -236,7 +232,7 @@ namespace Pachyderm_Acoustic
             double rho; //Density
             double Zmed;
 
-            MathNet.Numerics.Interpolation.CubicSpline Spectrum;
+            MathNet.Numerics.Interpolation.IInterpolationMethod Spectrum;
             
             public void ISO9613_1_Spline(double Tk, double Pa, double Hr)
             {
@@ -247,7 +243,7 @@ namespace Pachyderm_Acoustic
                     freq[i-1] = df * i;
                 }
 
-                Spectrum = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(freq, ISO9613_1_attencoef(freq, Tk, Pa, Hr));
+                Spectrum = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(freq, ISO9613_1_attencoef(freq, Tk, Pa, Hr));
             }
 
             public override void AttenuationFilter(int no_of_elements, int sample_Frequency, double distance_meters, ref double[] Freq, ref double[] Atten, Hare.Geometry.Point pt)
@@ -343,7 +339,7 @@ namespace Pachyderm_Acoustic
             double MinX, MinY, MinZ;
             double VdimX, VdimY, VdimZ;
 
-            MathNet.Numerics.Interpolation.CubicSpline[] Spectrum;
+            MathNet.Numerics.Interpolation.IInterpolationMethod[] Spectrum;
             
             public Heterogeneous_Grid_Medium(int Air_Choice, double[, ,] Pa, double[, ,] TC, double[, ,] hr, bool EdgeCorrection, VoxelGrid_PolyRefractive V)
             {
@@ -362,7 +358,7 @@ namespace Pachyderm_Acoustic
                 C_Sound = new double[Xdom * Ydom * Zdom];
                 rho = new double[Xdom * Ydom * Zdom];
                 Zmed = new double[Xdom * Ydom * Zdom];
-                Spectrum = new MathNet.Numerics.Interpolation.CubicSpline[Xdom * Ydom * Zdom];
+                Spectrum = new MathNet.Numerics.Interpolation.IInterpolationMethod[Xdom * Ydom * Zdom];
 
                 for (int x = 0; x < Xdom; x++)
                 {
@@ -392,7 +388,7 @@ namespace Pachyderm_Acoustic
                     freq[i - 1] = df * i;
                 }
 
-                Spectrum[code] = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(freq, ISO9613_1_attencoef(freq, Tk, Pa, Hr));
+                Spectrum[code] = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(freq, ISO9613_1_attencoef(freq, Tk, Pa, Hr));
             }
 
             public override void AttenuationFilter(int no_of_elements, int sample_Frequency, double distance_meters, ref double[] Freq, ref double[] Atten, Hare.Geometry.Point pt)

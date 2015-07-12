@@ -62,8 +62,7 @@ namespace Pachyderm_Acoustic
             public Simulation_Type Sim = null;
             //public Result CommandResult = Result.Nothing;
             private bool CancelCalc = false;
-            public System.Threading.CountdownEvent CD = new System.Threading.CountdownEvent(0);
-
+            
             bool success = false;
 
             ///<summary> This gets called when when the user runs this command.</summary>

@@ -16,14 +16,11 @@
 //'License along with Pachyderm-Acoustic; if not, write to the Free Software 
 //'Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. 
 
-using System.Runtime.InteropServices;
 using System;
-using System.Threading.Tasks;
 using Pachyderm_Acoustic.Utilities;
 using System.Collections.Generic;
-using System.Numerics;
+using MathNet.Numerics;
 using FFTWSharp;
-using System.Linq;
 
 namespace Pachyderm_Acoustic
 {
@@ -52,7 +49,7 @@ namespace Pachyderm_Acoustic
             /// A function used to describe the relationship between the ends of a raised 
             /// cosine filter and the amount of spill into a neighboring octave band.
             /// </summary>
-            static MathNet.Numerics.Interpolation.CubicSpline RCos_Integral;
+            static MathNet.Numerics.Interpolation.IInterpolationMethod RCos_Integral;
 
             public static void Initialize_FFTW()
             {
@@ -96,7 +93,7 @@ namespace Pachyderm_Acoustic
                     A[i] = 0.25 * (ph[i] - Math.Cos(ph[i])) / (Math.PI * 2);
                 }
 
-                RCos_Integral = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(A, ph);
+                RCos_Integral = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(A, ph);
             }
 
             public static void Raised_Cosine_Window(ref double[] h)
@@ -198,7 +195,7 @@ namespace Pachyderm_Acoustic
                 }
 
                 ///////////Use Zero Phase Bandpass//////////////////////
-                System.Numerics.Complex[] filter = Mirror_Spectrum(magspec);
+                MathNet.Numerics.Complex[] filter = Mirror_Spectrum(magspec);
 
                 //Convolve signal with Bandpass Filter.
                 Complex[] freq_h = FFT_General(h, thread);
@@ -216,18 +213,18 @@ namespace Pachyderm_Acoustic
                 return h_oct;
             }
 
-            //public static System.Numerics.Complex[] FFT(Complex[] Signal, int threadid)
+            //public static MathNet.Numerics.Complex[] FFT(Complex[] Signal, int threadid)
             //{
             //    //FFTW.Net Setup//
             //    FFT_ArrayIn8192[threadid].SetData(Signal);
             //    //FFT_ArrayOut8192[threadid].SetZeroData();
             //    FFT_Plan8192[threadid].Execute();
 
-            //    System.Numerics.Complex[] Out = FFT_ArrayOut8192[threadid].GetData_Complex();
+            //    MathNet.Numerics.Complex[] Out = FFT_ArrayOut8192[threadid].GetData_Complex();
             //    return Out;
             //}
 
-            public static System.Numerics.Complex[] FFT(double[] Signal, int threadid)
+            public static MathNet.Numerics.Complex[] FFT(double[] Signal, int threadid)
             {
                 double[] Sig_complex = new double[Signal.Length * 2];
                 for (int i = 0; i < Signal.Length; i++) Sig_complex[i * 2] = Signal[i];
@@ -237,17 +234,17 @@ namespace Pachyderm_Acoustic
                 //FFT_ArrayOut8192[threadid].SetZeroData();
                 FFT_Plan[threadid].Execute();
 
-                System.Numerics.Complex[] Out = FFT_ArrayOut8192[threadid].GetData_Complex();
+                MathNet.Numerics.Complex[] Out = FFT_ArrayOut8192[threadid].GetData_Complex();
                 return Out;
             }
 
-            public static double[] IFFT_Real(System.Numerics.Complex[] spectrum, int threadid)
+            public static double[] IFFT_Real(MathNet.Numerics.Complex[] spectrum, int threadid)
             {
                 double[] samplep = new double[spectrum.Length * 2];
                 for (int i = 0; i < spectrum.Length; i++)
                 {
                     samplep[2 * i] = spectrum[i].Real;
-                    samplep[2 * i + 1] = spectrum[i].Imaginary;
+                    samplep[2 * i + 1] = spectrum[i].Imag;
                 }
 
                 //FFTW.Net Setup//
@@ -259,25 +256,25 @@ namespace Pachyderm_Acoustic
                 return Out;
             }
 
-            public static Complex[] IFFT(System.Numerics.Complex[] spectrum, int threadid)
+            public static Complex[] IFFT(MathNet.Numerics.Complex[] spectrum, int threadid)
             {
                 double[] samplep = new double[spectrum.Length * 2];
                 for (int i = 0; i < spectrum.Length; i++)
                 {
                     samplep[2 * i] = spectrum[i].Real;
-                    samplep[2 * i + 1] = spectrum[i].Imaginary;
+                    samplep[2 * i + 1] = spectrum[i].Imag;
                 }
 
                 //FFTW.Net Setup//
                 IFFT_ArrayIn8192[threadid].SetData(samplep);
                 IFFT_Plan8192[threadid].Execute();
 
-                System.Numerics.Complex[] Out = IFFT_ArrayOut8192[threadid].GetData_Complex();
+                MathNet.Numerics.Complex[] Out = IFFT_ArrayOut8192[threadid].GetData_Complex();
 
                 return Out;
             }
 
-            public static System.Numerics.Complex[] FFT_General(Complex[] Signal, int threadid)
+            public static MathNet.Numerics.Complex[] FFT_General(Complex[] Signal, int threadid)
             {
                 //FFTW.Net Setup//
                 FFT_ArrayIn[threadid] = new fftw_complexarray(Signal);
@@ -285,12 +282,12 @@ namespace Pachyderm_Acoustic
                 FFT_Plan[threadid] = fftw_plan.dft_1d(Signal.Length, FFT_ArrayIn[threadid], FFT_ArrayOut[threadid], fftw_direction.Forward, fftw_flags.Estimate);
                 FFT_Plan[threadid].Execute();
 
-                System.Numerics.Complex[] Out = FFT_ArrayOut[threadid].GetData_Complex();
+                MathNet.Numerics.Complex[] Out = FFT_ArrayOut[threadid].GetData_Complex();
 
                 return Out;
             }
 
-            public static System.Numerics.Complex[] FFT_General(double[] Signal, int threadid)
+            public static MathNet.Numerics.Complex[] FFT_General(double[] Signal, int threadid)
             {
                 double[] Sig_complex = new double[Signal.Length * 2];
                 for (int i = 0; i < Signal.Length; i++) Sig_complex[i * 2] = Signal[i];
@@ -302,18 +299,18 @@ namespace Pachyderm_Acoustic
 
                 FFT_Plan[threadid].Execute();
 
-                System.Numerics.Complex[] Out = FFT_ArrayOut[threadid].GetData_Complex();
+                MathNet.Numerics.Complex[] Out = FFT_ArrayOut[threadid].GetData_Complex();
 
                 return Out;
             }
 
-            public static double[] IFFT_Real_General(System.Numerics.Complex[] spectrum, int threadid)
+            public static double[] IFFT_Real_General(MathNet.Numerics.Complex[] spectrum, int threadid)
             {
                 double[] samplep = new double[spectrum.Length * 2];
                 for (int i = 0; i < spectrum.Length; i++)
                 {
                     samplep[2 * i] = spectrum[i].Real;
-                    samplep[2 * i + 1] = spectrum[i].Imaginary;
+                    samplep[2 * i + 1] = spectrum[i].Imag;
                 }
 
                 //FFTW.Net Setup//
@@ -328,13 +325,13 @@ namespace Pachyderm_Acoustic
                 return Out;
             }
 
-            public static Complex[] IFFT_General(System.Numerics.Complex[] spectrum, int threadid)
+            public static Complex[] IFFT_General(MathNet.Numerics.Complex[] spectrum, int threadid)
             {
                 double[] samplep = new double[spectrum.Length * 2];
                 for (int i = 0; i < spectrum.Length; i++)
                 {
                     samplep[2 * i] = spectrum[i].Real;
-                    samplep[2 * i + 1] = spectrum[i].Imaginary;
+                    samplep[2 * i + 1] = spectrum[i].Imag;
                 }
 
                 //FFTW.Net Setup//
@@ -344,7 +341,7 @@ namespace Pachyderm_Acoustic
 
                 IFFT_Plan[threadid].Execute();
 
-                System.Numerics.Complex[] Out = IFFT_ArrayOut[threadid].GetData_Complex();
+                MathNet.Numerics.Complex[] Out = IFFT_ArrayOut[threadid].GetData_Complex();
 
                 return Out;
             }
@@ -372,7 +369,7 @@ namespace Pachyderm_Acoustic
                 for (int i = 1; i < spectrum.Length; i++)
                 {
                     samplep[i] = spectrum[i];
-                    samplep[samplep.Length - i] = Complex.Conjugate(spectrum[i]);
+                    samplep[samplep.Length - i] = (spectrum[i]).Conjugate;
                 }
                 return samplep;
             }
@@ -671,7 +668,7 @@ namespace Pachyderm_Acoustic
                 if (pr.Count < f.Count) pr.Add(Octave_pressure[7]);//16k
                 while (pr.Count < f.Count) pr.Add(Octave_pressure[7]);
 
-                MathNet.Numerics.Interpolation.CubicSpline prm = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkimaSorted(f.ToArray(), pr.ToArray());
+                MathNet.Numerics.Interpolation.IInterpolationMethod prm = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(f.ToArray(), pr.ToArray());
 
                 double[] p_i = new double[spec_length];
 
@@ -684,9 +681,9 @@ namespace Pachyderm_Acoustic
                 return p_i;
             }
             
-            public static System.Numerics.Complex[] Minimum_Phase_TF(double[] M_spec, int sample_frequency, int threadid)
+            public static MathNet.Numerics.Complex[] Minimum_Phase_TF(double[] M_spec, int sample_frequency, int threadid)
             {
-                System.Numerics.Complex[] logspec = new System.Numerics.Complex[M_spec.Length];
+                MathNet.Numerics.Complex[] logspec = new MathNet.Numerics.Complex[M_spec.Length];
                 for (int i = 0; i < M_spec.Length; i++)
                 {
                     logspec[i] = Math.Log(M_spec[i]);
@@ -703,21 +700,21 @@ namespace Pachyderm_Acoustic
                     ym[i] = 2 * real_cepstrum[i];
                 }
                 ym[M_spec.Length] = real_cepstrum[M_spec.Length];
-                System.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
+                MathNet.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
 
                 for (int i = 0; i < ymspec.Length; i++)
                 {
-                    ymspec[i] = Complex.Exp(ymspec[i]);
+                    ymspec[i] = (ymspec[i]).Exponential();
                 }
 
                 return ymspec;
             }
 
-            public static System.Numerics.Complex[] Minimum_Phase_Spectrum(double[] Octave_pressure, int sample_frequency, int length_starttofinish, int threadid)
+            public static MathNet.Numerics.Complex[] Minimum_Phase_Spectrum(double[] Octave_pressure, int sample_frequency, int length_starttofinish, int threadid)
             {
                 double[] M_spec = Magnitude_Spectrum(Octave_pressure, sample_frequency, length_starttofinish, threadid);
 
-                System.Numerics.Complex[] logspec = new System.Numerics.Complex[M_spec.Length];
+                MathNet.Numerics.Complex[] logspec = new MathNet.Numerics.Complex[M_spec.Length];
                 for (int i = 0; i < M_spec.Length; i++)
                 {
                     logspec[i] = Math.Log(M_spec[i]);
@@ -734,11 +731,11 @@ namespace Pachyderm_Acoustic
                     ym[i] = 2 * real_cepstrum[i];
                 }
                 ym[length_starttofinish / 2] = real_cepstrum[length_starttofinish / 2];
-                System.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
+                MathNet.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
 
                 for (int i = 0; i < ymspec.Length; i++)
                 {
-                    ymspec[i] = Complex.Exp(ymspec[i]);
+                    ymspec[i] = (ymspec[i]).Exponential();
                 }
 
                 return ymspec;
@@ -751,7 +748,7 @@ namespace Pachyderm_Acoustic
                 double sum_start = 0;
                 for (int i = 0; i < M_spec.Length; i++) sum_start += M_spec[i] * M_spec[i];
 
-                System.Numerics.Complex[] logspec = new System.Numerics.Complex[M_spec.Length];
+                MathNet.Numerics.Complex[] logspec = new MathNet.Numerics.Complex[M_spec.Length];
                 for (int i = 0; i < M_spec.Length; i++)
                 {
                     logspec[i] = Math.Log(M_spec[i]);
@@ -768,11 +765,11 @@ namespace Pachyderm_Acoustic
                     ym[i] = 2 * real_cepstrum[i];
                 }
                 ym[length_starttofinish / 2] = real_cepstrum[length_starttofinish / 2];
-                System.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
+                MathNet.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
 
                 for (int i = 0; i < ymspec.Length; i++)
                 {
-                    ymspec[i] = Complex.Exp(ymspec[i]);
+                    ymspec[i] = (ymspec[i]).Exponential();
                 }
 
                 double[] Signal = IFFT_Real_General(ymspec, threadid); //This is real valued hopefully... (if not there is a problem...)
@@ -787,11 +784,11 @@ namespace Pachyderm_Acoustic
                 return Signal;
             }
 
-            public static System.Numerics.Complex[] Minimum_Phase_TF_Octaves(double[] Octave_filter, int sample_frequency, int length_starttofinish, int threadid)
+            public static MathNet.Numerics.Complex[] Minimum_Phase_TF_Octaves(double[] Octave_filter, int sample_frequency, int length_starttofinish, int threadid)
             {
                 double[] M_spec = Magnitude_Filter(Octave_filter, sample_frequency, length_starttofinish, threadid);
 
-                System.Numerics.Complex[] logspec = new System.Numerics.Complex[M_spec.Length];
+                MathNet.Numerics.Complex[] logspec = new MathNet.Numerics.Complex[M_spec.Length];
                 for (int i = 0; i < M_spec.Length; i++)
                 {
                     logspec[i] = Math.Log(M_spec[i]);
@@ -808,11 +805,11 @@ namespace Pachyderm_Acoustic
                     ym[i] = 2 * real_cepstrum[i];
                 }
                 ym[length_starttofinish / 2] = real_cepstrum[length_starttofinish / 2];
-                System.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
+                MathNet.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
 
                 for (int i = 0; i < ymspec.Length; i++)
                 {
-                    ymspec[i] = Complex.Exp(ymspec[i]);
+                    ymspec[i] = (ymspec[i]).Exponential();
                 }
 
                 return ymspec;
@@ -845,7 +842,7 @@ namespace Pachyderm_Acoustic
 
             public static double[] Minimum_Phase_Response(double[] M_spec, int sample_frequency, int threadid)
             {
-                System.Numerics.Complex[] logspec = new System.Numerics.Complex[M_spec.Length];
+                MathNet.Numerics.Complex[] logspec = new MathNet.Numerics.Complex[M_spec.Length];
                 for (int i = 0; i < M_spec.Length; i++)
                 {
                     if (M_spec[i]== 0) logspec[i] = Math.Log(double.Epsilon);
@@ -863,11 +860,11 @@ namespace Pachyderm_Acoustic
                     ym[i] = 2 * real_cepstrum[i];
                 }
                 ym[M_spec.Length] = real_cepstrum[M_spec.Length];
-                System.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
+                MathNet.Numerics.Complex[] ymspec = FFT_General(ym, threadid);
 
                 for (int i = 0; i < ymspec.Length; i++)
                 {
-                    ymspec[i] = Complex.Exp(ymspec[i]);
+                    ymspec[i] = (ymspec[i]).Exponential();
                 }
 
                 double[] Signal = IFFT_Real_General(ymspec, threadid);
@@ -894,10 +891,11 @@ namespace Pachyderm_Acoustic
                 int[] to = new int[proc];
                 int[] from = new int[proc];
 
-                System.Threading.CountdownEvent CDE = new System.Threading.CountdownEvent(proc);
+                System.Threading.Semaphore CDE = new System.Threading.Semaphore(proc, proc);
 
                 for (int p = 0; p < proc; p++)
                 {
+                    CDE.WaitOne();
                     output[p] = new double[length];
                     samplep[p] = new double[length * 2];
                     to[p] = p * Octave_ETC[0].Length / proc;
@@ -924,13 +922,16 @@ namespace Pachyderm_Acoustic
                                 }
                             }
                         }
-                        CDE.Signal();
+                        CDE.Release();
                     });
                     T[p].Start(p);
                 }
 
-                CDE.Wait();
-
+                int ctdn = 0;
+                while (ctdn < proc)
+                {
+                    CDE.WaitOne();
+                }
                 return IR;
             }
 
@@ -996,10 +997,10 @@ namespace Pachyderm_Acoustic
                 if (SignalBuffer.Length < W) Array.Resize(ref SignalBuffer, W);
                 if (Filter.Length < W) Array.Resize(ref Filter, W);
 
-                System.Numerics.Complex[] freq1 = FFT_General(SignalBuffer, threadid);
-                System.Numerics.Complex[] freq2 = FFT_General(Filter, threadid);
+                MathNet.Numerics.Complex[] freq1 = FFT_General(SignalBuffer, threadid);
+                MathNet.Numerics.Complex[] freq2 = FFT_General(Filter, threadid);
                 
-                System.Numerics.Complex[] freq3 = new System.Numerics.Complex[W];
+                MathNet.Numerics.Complex[] freq3 = new MathNet.Numerics.Complex[W];
 
                 for (int i = 0; i < freq1.Length; i++) freq3[i] = freq1[i] * freq2[i];
 
@@ -1009,9 +1010,13 @@ namespace Pachyderm_Acoustic
                 double mod = 1d / Math.Sqrt(conv.Length);
                 for (int i = 0; i < conv.Length; i++) output[i] = (float)(conv[i] * mod);// * mod);
 
-                double maxfilt = Filter.Max();
-                double maxsig = SignalBuffer.Max();
-                double max = conv.Max();
+                double maxfilt = Filter[0];
+                double maxsig = SignalBuffer[0];
+                double max = conv[0];
+                for (int i = 1; i < Filter.Length; i++) Math.Max(maxfilt, Filter[i]);
+                for (int i = 1; i < SignalBuffer.Length; i++) Math.Max(maxsig, SignalBuffer[i]);
+                for (int i = 1; i < conv.Length; i++) Math.Max(max, conv[i]);
+                
                 max++;
                 maxsig++;
                 maxfilt++;
@@ -1044,7 +1049,7 @@ namespace Pachyderm_Acoustic
                 double[] NewTE = new double[8];
                 for(int oct = 0; oct < 8; oct++)
                 {
-                    MathNet.Numerics.Interpolation.CubicSpline CS = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(time, SPLetc[oct]);
+                    MathNet.Numerics.Interpolation.IInterpolationMethod CS = MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(time, SPLetc[oct]);
                     NewETC[oct] = new double[NewLength];
                     for(int i = 0;i < NewLength; i++)
                     {

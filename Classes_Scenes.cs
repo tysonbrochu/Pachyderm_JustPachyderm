@@ -2177,7 +2177,7 @@ namespace Pachyderm_Acoustic
                 foreach(int i in isect)
                 {
                     V += this.Normal(i);
-                    abs += (1 - this.AbsorptionData[i].Reflection_Narrow(0)).Magnitude;
+                    abs += (1 - this.AbsorptionData[i].Reflection_Narrow(0)).Modulus;
                     ///TODO:Find some intelligent way of applying absorption.
                 }
 

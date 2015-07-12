@@ -20,7 +20,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using System.Numerics;
+using MathNet.Numerics;
 
 namespace FFTWSharp
 {
@@ -268,7 +268,7 @@ namespace FFTWSharp
             for (int i = 0; i < data.Length; i++)
             {
                 data_in[2 * i] = data[i].Real;
-                data_in[2 * i + 1] = data[i].Imaginary;
+                data_in[2 * i + 1] = data[i].Imag;
             }
 
             Marshal.Copy(data_in, 0, handle, this.length * 2);
@@ -297,7 +297,7 @@ namespace FFTWSharp
             for (int i = 0; i < data.Length; i++)
             {
                 data_in[2 * i] = data[i].Real;
-                data_in[2 * i + 1] = data[i].Imaginary;
+                data_in[2 * i + 1] = data[i].Imag;
             }
 
             Marshal.Copy(data_in, 0, handle, this.length * 2);

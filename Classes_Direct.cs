@@ -20,7 +20,6 @@ using System;
 using Hare.Geometry;
 using Pachyderm_Acoustic.Environment;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Pachyderm_Acoustic
 {
@@ -112,7 +111,7 @@ namespace Pachyderm_Acoustic
         {
             Direct_Sound D = new Direct_Sound();
 
-            D.Receiver = RecPts.ToList<Hare.Geometry.Point>(); //new Receiver_Bank(RecPts, SrcPt, 343, new double[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 1000, 0, Receiver_Bank.Type.Stationary);
+            D.Receiver = RecPts as List<Hare.Geometry.Point>; //new Receiver_Bank(RecPts, SrcPt, 343, new double[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 1000, 0, Receiver_Bank.Type.Stationary);
             int Rec_Ct = D.Receiver.Count;//RecPts.Count<Point>();
             D.Rho_C = Rho_C;
             //2. Write strength reference data
@@ -155,15 +154,16 @@ namespace Pachyderm_Acoustic
             }
 
             D.Src = new GeodesicSource(D.SWL, new double[8]{0,0,0,0,0,0,0,0}, new Point(SrcPt.x, SrcPt.y, SrcPt.z), 0, 0);
-            D.Validity = new Boolean[RecPts.Count<Hare.Geometry.Point>()];
-            D.Time_Pt = new double[RecPts.Count<Hare.Geometry.Point>()];
-            D.Io = new double[RecPts.Count<Hare.Geometry.Point>()][,];
-            D.Dir_Rec_Pos = new float[RecPts.Count<Hare.Geometry.Point>()][, ,];
-            D.Dir_Rec_Neg = new float[RecPts.Count<Hare.Geometry.Point>()][, ,];
+            int ct = (RecPts as List<Point>).Count;
+            D.Validity = new Boolean[ct];
+            D.Time_Pt = new double[ct];
+            D.Io = new double[ct][,];
+            D.Dir_Rec_Pos = new float[ct][, ,];
+            D.Dir_Rec_Neg = new float[ct][, ,];
 
             double v = double.Parse(Version.Substring(0, 3));
 
-            for (int q = 0; q < RecPts.Count<Hare.Geometry.Point>(); q++)
+            for (int q = 0; q < ct; q++)
             {
                 //2.2 Write number of samples
                 int no_of_samples = BR.ReadInt32();
@@ -1120,7 +1120,7 @@ namespace Pachyderm_Acoustic
         //                    }
         //                    else
         //                    {
-        //                        for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
+        //                        for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(t, Io_temp[oct]));
         //                    }
         //                    //Reset Spline Template
         //                    for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
@@ -1135,7 +1135,7 @@ namespace Pachyderm_Acoustic
         //                    C_id++;
         //                    if (t.Count > 0 && t.Count > 4)
         //                    {
-        //                        for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
+        //                        for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(t, Io_temp[oct]));
         //                        for (int oct = 0; oct < 8; oct++) Io_temp[oct] = new List<double>();
         //                        t = new List<double>();
         //                        Intval[1] = tau[rec_id][i][j];
@@ -1186,7 +1186,7 @@ namespace Pachyderm_Acoustic
         //            }
 
         //            if (t.Count < 5) continue;
-        //            for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(t, Io_temp[oct]));
+        //            for (int oct = 0; oct < 8; oct++) I_Curve[i][oct].Add(MathNet.Numerics.Interpolation.Interpolation.CreateAkimaCubicSpline(t, Io_temp[oct]));
         //            Intval[1] = tau[rec_id][i][tau[rec_id][i].Length - 1];
         //            Intervals[i].Add(Intval);
         //        }
