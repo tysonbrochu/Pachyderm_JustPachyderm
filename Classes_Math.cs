@@ -151,168 +151,120 @@ namespace Pachyderm_Acoustic
         ///</summary>
         public class AcousticalMath
         {
-                /// <summary>
-                /// Calculate Sound Pressure Level (in dB) from intensity/energy.
-                /// </summary>
-                /// <param name="Intensity"></param>
-                /// <returns></returns>
-                public static double SPL_Intensity(double Intensity)
+            /// <summary>
+            /// Calculate Sound Pressure Level (in dB) from intensity/energy.
+            /// </summary>
+            /// <param name="Intensity"></param>
+            /// <returns></returns>
+            public static double SPL_Intensity(double Intensity)
+            {
+                double SPL = 10 * Math.Log10(Intensity / 1E-12);
+                if (SPL < 0) return 0;
+                return SPL;
+            }
+
+            public static double SPL_Pressure(double Pressure)
+            {
+                return 20 * Math.Log10(Math.Abs(Pressure) / 2E-5);
+            }
+
+            /// <summary>
+            /// Calculate Sound Pressure Level (in dB) from intensity/energy for entire signal.
+            /// </summary>
+            /// <param name="Intensity"></param>
+            /// <returns></returns>
+            public static double[] SPL_Intensity_Signal(double[] Intensity)
+            {
+                for (int i = 0; i < Intensity.Length; i++)
                 {
-                    double SPL = 10 * Math.Log10(Intensity / 1E-12);
-                    if (SPL < 0) return 0;
-                    return SPL;
+                    Intensity[i] = SPL_Intensity(Intensity[i]);
                 }
+                return Intensity;
+            }
 
-                public static double SPL_Pressure(double Pressure)
+            public static double[] SPL_Pressure_Signal(double[] P)
+            {
+                double[] SPL = new double[P.Length];
+
+                for (int i = 0; i < P.Length; i++)
                 {
-                    return 20 * Math.Log10(Math.Abs(Pressure) / 2E-5);
+                    SPL[i] = SPL_Pressure(P[i]);
                 }
+                return SPL;
+            }
 
-                /// <summary>
-                /// Calculate Sound Pressure Level (in dB) from intensity/energy for entire signal.
-                /// </summary>
-                /// <param name="Intensity"></param>
-                /// <returns></returns>
-                public static double[] SPL_Intensity_Signal(double[] Intensity)
+            /// <summary>
+            /// Calculates SPL-time curve from simulation output.
+            /// </summary>
+            /// <param name="Direct"></param>
+            /// <param name="ISData"></param>
+            /// <param name="RTData"></param>
+            /// <param name="CO_Time"></param>
+            /// <param name="samplerate"></param>
+            /// <param name="Octave">the chosen octave band.</param>
+            /// <param name="Rec_ID">the id of the selected receiver.</param>
+            /// <returns></returns>
+            public static double[] SPLTCurve_Intensity(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, int SrcID, bool Start_at_Zero)
+            {
+                double[] Energy = ETCurve(Direct, ISData, RTData, CO_Time, samplerate, Octave, Rec_ID, SrcID, Start_at_Zero);
+                double[] SPL = new double[Energy.Length];
+
+                for (int i = 0; i < Energy.Length; i++)
                 {
-                    for (int i = 0; i < Intensity.Length; i++)
-                    {
-                        Intensity[i] = SPL_Intensity(Intensity[i]);
-                    }
-                    return Intensity;
+                    SPL[i] = SPL_Intensity(Energy[i]);
                 }
+                return SPL;
+            }
 
-                public static double[] SPL_Pressure_Signal(double[] P)
+            public static double[] SPLTCurve_Pressure(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, int SrcID, bool Start_at_Zero)
+            {
+                double[] P;//, Imag;
+                //double[] Pressure = PTCurve(Direct, ISData, RTData, CO_Time, samplerate, Octave, Rec_ID, SrcID, Start_at_Zero, Numerics.ComplexComponent.Modulus);
+                PTCurve(Direct, ISData, RTData, CO_Time, samplerate, Rec_ID, SrcID, Start_at_Zero, out P);//, out Imag);
+                float[] Pressure = new float[P.Length];
+                //for (int i = 0; i < Pressure.Length; i++) Pressure[i] = Numerics.Abs(Real[i], Imag[i]);
+
+                double[] SPL = new double[Pressure.Length];
+
+                for (int i = 0; i < Pressure.Length; i++)
                 {
-                    double[] SPL = new double[P.Length];
-
-                    for (int i = 0; i < P.Length; i++)
-                    {
-                        SPL[i] = SPL_Pressure(P[i]);
-                    }
-                    return SPL;
+                    SPL[i] = SPL_Pressure(Pressure[i]);
                 }
-                
-                /// <summary>
-                /// Calculates SPL-time curve from simulation output.
-                /// </summary>
-                /// <param name="Direct"></param>
-                /// <param name="ISData"></param>
-                /// <param name="RTData"></param>
-                /// <param name="CO_Time"></param>
-                /// <param name="samplerate"></param>
-                /// <param name="Octave">the chosen octave band.</param>
-                /// <param name="Rec_ID">the id of the selected receiver.</param>
-                /// <returns></returns>
-                public static double[] SPLTCurve_Intensity(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, int SrcID, bool Start_at_Zero)
-                {
-                    double[] Energy = ETCurve(Direct, ISData, RTData, CO_Time, samplerate, Octave, Rec_ID, SrcID, Start_at_Zero);
-                    double[] SPL = new double[Energy.Length];
+                return SPL;
+            }
 
-                    for (int i = 0; i < Energy.Length; i++)
-                    {
-                        SPL[i] = SPL_Intensity(Energy[i]);
-                    }
-                    return SPL;
-                }
+            public static double[] SPLTCurve_Intensity(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, bool StartAtZero)
+            {
+                Direct_Sound[] ArrDirect = new Direct_Sound[1];
+                ArrDirect[0] = Direct;
+                ImageSourceData[] ArrIS = new ImageSourceData[1];
+                ArrIS[0] = ISData;
+                Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
+                ArrRT[0] = RTData;
+                return SPLTCurve_Intensity(ArrDirect, ArrIS, ArrRT, CO_Time, samplerate, Octave, Rec_ID, 0, StartAtZero);
+            }
 
-                public static double[] SPLTCurve_Pressure(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, int SrcID, bool Start_at_Zero)
-                {
-                    double[] P;//, Imag;
-                    //double[] Pressure = PTCurve(Direct, ISData, RTData, CO_Time, samplerate, Octave, Rec_ID, SrcID, Start_at_Zero, Numerics.ComplexComponent.Modulus);
-                    PTCurve(Direct, ISData, RTData, CO_Time, samplerate, Rec_ID, SrcID, Start_at_Zero, out P);//, out Imag);
-                    float[] Pressure = new float[P.Length];
-                    //for (int i = 0; i < Pressure.Length; i++) Pressure[i] = Numerics.Abs(Real[i], Imag[i]);
+            public static double[] SPLTCurve_Pressure(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, bool StartAtZero)
+            {
+                Direct_Sound[] ArrDirect = new Direct_Sound[1];
+                ArrDirect[0] = Direct;
+                ImageSourceData[] ArrIS = new ImageSourceData[1];
+                ArrIS[0] = ISData;
+                Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
+                ArrRT[0] = RTData;
+                return SPLTCurve_Pressure(ArrDirect, ArrIS, ArrRT, CO_Time, samplerate, Octave, Rec_ID, 0, StartAtZero);
+            }
 
-                    double[] SPL = new double[Pressure.Length];
+            public static double[] ETCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero)
+            {
+                //TODO: Make provisions for specifying source delays...
+                //double[] Histogram = new double[(int)(CO_Time * Sampling_Frequency)];
 
-                    for (int i = 0; i < Pressure.Length; i++)
-                    {
-                        SPL[i] = SPL_Pressure(Pressure[i]);
-                    }
-                    return SPL;
-                }
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
 
-                public static double[] SPLTCurve_Intensity(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, bool StartAtZero)
-                {
-                    Direct_Sound[] ArrDirect = new Direct_Sound[1];
-                    ArrDirect[0] = Direct;
-                    ImageSourceData[] ArrIS = new ImageSourceData[1];
-                    ArrIS[0] = ISData;
-                    Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
-                    ArrRT[0] = RTData;
-                    return SPLTCurve_Intensity(ArrDirect, ArrIS, ArrRT, CO_Time, samplerate, Octave, Rec_ID, 0, StartAtZero);
-                }
-
-                public static double[] SPLTCurve_Pressure(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time, int samplerate, int Octave, int Rec_ID, bool StartAtZero)
-                {
-                    Direct_Sound[] ArrDirect = new Direct_Sound[1];
-                    ArrDirect[0] = Direct;
-                    ImageSourceData[] ArrIS = new ImageSourceData[1];
-                    ArrIS[0] = ISData;
-                    Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
-                    ArrRT[0] = RTData;
-                    return SPLTCurve_Pressure(ArrDirect, ArrIS, ArrRT, CO_Time, samplerate, Octave, Rec_ID, 0, StartAtZero);
-                }
-
-                public static double[] ETCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero)
-                {
-                    //TODO: Make provisions for specifying source delays...
-                    //double[] Histogram = new double[(int)(CO_Time * Sampling_Frequency)];
-
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
-
-                    double maxdelay = 0;
-
-                    List<double> delays = new List<double>();
-
-                if (Direct[0] != null)
-                {
-                    foreach (Direct_Sound d in Direct)
-                    {
-                        delays.Add(d.Delay_ms);
-                        maxdelay = Math.Max(maxdelay, d.Delay_ms);
-                    }
-                }
-                else if (RTData[0] != null)
-                {
-                    foreach (Receiver_Bank r in RTData)
-                    {
-                        delays.Add(r.delay_ms);
-                        maxdelay = Math.Max(maxdelay, r.delay_ms);
-                    }
-                }
-
-                    maxdelay *= Sampling_Frequency / 1000;
-                    
-                    double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-
-                    foreach (int s in SrcIDs)
-                    {
-                        double[] IR = ETCurve(Direct, ISData, RTData, CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, s, StartAtZero);
-                        //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
-                        //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
-                        for (int i = 0; i < IR.Length; i++)
-                        {
-                            Histogram[i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[i];
-                        }
-                    }
-                    return Histogram;
-                }
-
-                public static double[] PTCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero)
-                {
-                    //TODO: Make provisions for specifying source delays...
-                    //double[] Ptotal = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //double[] Histogram = new double[(int)(CO_Time * Sampling_Frequency)];
-
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
-
-                    double maxdelay = 0;
+                double maxdelay = 0;
 
                 List<double> delays = new List<double>();
 
@@ -334,182 +286,230 @@ namespace Pachyderm_Acoustic
                 }
 
                 maxdelay *= Sampling_Frequency / 1000;
-                    
-                    double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192*2 + (int)Math.Ceiling(maxdelay)];
 
-                    foreach (int s in SrcIDs)
+                double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+
+                foreach (int s in SrcIDs)
+                {
+                    double[] IR = ETCurve(Direct, ISData, RTData, CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, s, StartAtZero);
+                    //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
+                    //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
+                    for (int i = 0; i < IR.Length; i++)
                     {
-                        double[] P;
-                        PTCurve(Direct, ISData, RTData, CO_Time_ms, Sampling_Frequency, Rec_ID, s, StartAtZero, out P);
-                        //Array.Resize(ref P, P.Length + (int)Math.Ceiling(maxdelay));
-                        //if (P.Length > Ptotal.Length) Array.Resize(ref Ptotal, P.Length);
-                        for (int i = 0; i < P.Length; i++)
-                        {
-                            Histogram[i + (int)Math.Ceiling(delays[s] /1000 * Sampling_Frequency)] += P[i];
-                        }
+                        Histogram[i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[i];
                     }
-                    return Histogram;
+                }
+                return Histogram;
+            }
+
+            public static double[] PTCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero)
+            {
+                //TODO: Make provisions for specifying source delays...
+                //double[] Ptotal = new double[(int)(CO_Time * Sampling_Frequency)];
+                //double[] Histogram = new double[(int)(CO_Time * Sampling_Frequency)];
+
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+
+                double maxdelay = 0;
+
+                List<double> delays = new List<double>();
+
+                if (Direct[0] != null)
+                {
+                    foreach (Direct_Sound d in Direct)
+                    {
+                        delays.Add(d.Delay_ms);
+                        maxdelay = Math.Max(maxdelay, d.Delay_ms);
+                    }
+                }
+                else if (RTData[0] != null)
+                {
+                    foreach (Receiver_Bank r in RTData)
+                    {
+                        delays.Add(r.delay_ms);
+                        maxdelay = Math.Max(maxdelay, r.delay_ms);
+                    }
                 }
 
-                public static double[] ETCurve(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time_ms, int samplerate, int Octave, int Rec_ID, bool StartAtZero)
-                {
-                    Direct_Sound[] ArrDirect = new Direct_Sound[1];
-                    ArrDirect[0] = Direct;
-                    ImageSourceData[] ArrIS = new ImageSourceData[1];
-                    ArrIS[0] = ISData;
-                    Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
-                    ArrRT[0] = RTData;
-                    return ETCurve(ArrDirect, ArrIS, ArrRT, CO_Time_ms, samplerate, Octave, Rec_ID, 0, StartAtZero);
-                }
+                maxdelay *= Sampling_Frequency / 1000;
 
-                public static double[] PTCurve(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time_ms, int samplerate, int Octave, int Rec_ID, bool StartAtZero, Numerics.ComplexComponent Output_Type)
+                double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192 * 2 + (int)Math.Ceiling(maxdelay)];
+
+                foreach (int s in SrcIDs)
                 {
-                    Direct_Sound[] ArrDirect = new Direct_Sound[1];
-                    ArrDirect[0] = Direct;
-                    ImageSourceData[] ArrIS = new ImageSourceData[1];
-                    ArrIS[0] = ISData;
-                    Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
-                    ArrRT[0] = RTData;
-                    
                     double[] P;
-                    PTCurve(ArrDirect, ArrIS, ArrRT, CO_Time_ms*0.001, samplerate, Rec_ID, 0, StartAtZero, out P);
-                    
-                    double[] Pressure = new double[P.Length];
-                    for (int i = 0; i < Pressure.Length; i++) Pressure[i] = P[i];
-                    return Pressure;
+                    PTCurve(Direct, ISData, RTData, CO_Time_ms, Sampling_Frequency, Rec_ID, s, StartAtZero, out P);
+                    //Array.Resize(ref P, P.Length + (int)Math.Ceiling(maxdelay));
+                    //if (P.Length > Ptotal.Length) Array.Resize(ref Ptotal, P.Length);
+                    for (int i = 0; i < P.Length; i++)
+                    {
+                        Histogram[i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += P[i];
+                    }
+                }
+                return Histogram;
+            }
+
+            public static double[] ETCurve(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time_ms, int samplerate, int Octave, int Rec_ID, bool StartAtZero)
+            {
+                Direct_Sound[] ArrDirect = new Direct_Sound[1];
+                ArrDirect[0] = Direct;
+                ImageSourceData[] ArrIS = new ImageSourceData[1];
+                ArrIS[0] = ISData;
+                Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
+                ArrRT[0] = RTData;
+                return ETCurve(ArrDirect, ArrIS, ArrRT, CO_Time_ms, samplerate, Octave, Rec_ID, 0, StartAtZero);
+            }
+
+            public static double[] PTCurve(Direct_Sound Direct, ImageSourceData ISData, Environment.Receiver_Bank RTData, double CO_Time_ms, int samplerate, int Octave, int Rec_ID, bool StartAtZero, Numerics.ComplexComponent Output_Type)
+            {
+                Direct_Sound[] ArrDirect = new Direct_Sound[1];
+                ArrDirect[0] = Direct;
+                ImageSourceData[] ArrIS = new ImageSourceData[1];
+                ArrIS[0] = ISData;
+                Environment.Receiver_Bank[] ArrRT = new Environment.Receiver_Bank[1];
+                ArrRT[0] = RTData;
+
+                double[] P;
+                PTCurve(ArrDirect, ArrIS, ArrRT, CO_Time_ms * 0.001, samplerate, Rec_ID, 0, StartAtZero, out P);
+
+                double[] Pressure = new double[P.Length];
+                for (int i = 0; i < Pressure.Length; i++) Pressure[i] = P[i];
+                return Pressure;
+            }
+
+            /// <summary>
+            /// Calculates Energy-time curve from simulation output.
+            /// </summary>
+            /// <param name="Direct"></param>
+            /// <param name="ISData"></param>
+            /// <param name="RTData"></param>
+            /// <param name="CO_Time"></param>
+            /// <param name="Sampling_Frequency"></param>
+            /// <param name="Octave">the chosen octave band.</param>
+            /// <param name="Rec_ID">the id of the selected receiver.</param>
+            /// <returns></returns>
+            public static double[] ETCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, int Src_ID, bool Start_at_Zero)
+            {
+                double[] Histogram = null;
+                if (RTData[Src_ID] != null)
+                {
+                    Histogram = RTData[Src_ID].GetEnergyHistogram(Octave, Rec_ID);
+                }
+                else
+                {
+                    Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
                 }
 
-                /// <summary>
-                /// Calculates Energy-time curve from simulation output.
-                /// </summary>
-                /// <param name="Direct"></param>
-                /// <param name="ISData"></param>
-                /// <param name="RTData"></param>
-                /// <param name="CO_Time"></param>
-                /// <param name="Sampling_Frequency"></param>
-                /// <param name="Octave">the chosen octave band.</param>
-                /// <param name="Rec_ID">the id of the selected receiver.</param>
-                /// <returns></returns>
-                public static double[] ETCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, int Src_ID, bool Start_at_Zero)
+                if (Direct[Src_ID] != null && Direct[Src_ID].IsOccluded(Rec_ID))
                 {
-                    double[] Histogram = null;
-                    if (RTData[Src_ID] != null)
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct[Src_ID].Time(Rec_ID) * Sampling_Frequency);
+                    for (int i = 0; i < Direct[Src_ID].Io[Rec_ID].GetLength(0); i++)
                     {
-                        Histogram = RTData[Src_ID].GetEnergyHistogram(Octave, Rec_ID);
-                    }
-                    else
-                    {
-                        Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
-                    }
-
-                    if (Direct[Src_ID] != null && Direct[Src_ID].IsOccluded(Rec_ID))
-                    {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct[Src_ID].Time(Rec_ID) * Sampling_Frequency);
-                        for (int i = 0; i < Direct[Src_ID].Io[Rec_ID].GetLength(0); i++)
-                        {
-                            double DirectValue = 0;
-                            switch (Octave)
-                            {
-                                case 8:
-                                    DirectValue = Direct[Src_ID].EnergySum(Rec_ID,i);
-                                    break;
-                                default:
-                                    DirectValue = Direct[Src_ID].EnergyValue(Octave, Rec_ID)[i];
-                                    break;
-                            }
-                            Histogram[D_Start + i] += DirectValue;
-                        }
-                    }
-
-                    if (ISData[Src_ID] != null)
-                    {
+                        double DirectValue = 0;
                         switch (Octave)
                         {
                             case 8:
-                                foreach (Deterministic_Reflection value in ISData[Src_ID].Paths[Rec_ID])
-                                {
-                                    if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
-                                    {
-                                        for (int oct = 0; oct < 8; oct++)
-                                        {
-                                            double[] e = value.Energy(oct);
-                                            for (int t = 0; t < e.Length; t++) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime) + t] += e[t];
-                                        }
-                                    }
-                                }
+                                DirectValue = Direct[Src_ID].EnergySum(Rec_ID, i);
                                 break;
                             default:
-                                foreach (Deterministic_Reflection value in ISData[Src_ID].Paths[Rec_ID])
-                                {
-                                    if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
-                                    {
-                                        double[] e = value.Energy(Octave);
-                                        for(int t = 0; t < e.Length; t++) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime) + t] += e[t];
-                                    }
-                                }
+                                DirectValue = Direct[Src_ID].EnergyValue(Octave, Rec_ID)[i];
                                 break;
                         }
+                        Histogram[D_Start + i] += DirectValue;
                     }
-                    return Histogram;
                 }
 
-                /// <summary>
-                /// Calculates pressure impulse response from simulation output.
-                /// </summary>
-                /// <param name="Direct"></param>
-                /// <param name="ISData"></param>
-                /// <param name="RTData"></param>
-                /// <param name="CO_Time"></param>
-                /// <param name="Sampling_Frequency"></param>
-                /// <param name="Octave">the chosen octave band.</param>
-                /// <param name="Rec_ID">the id of the selected receiver.</param>
-                /// <returns></returns>
-                public static void PTCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, int Src_ID, bool Start_at_Zero, out double[] P)
+                if (ISData[Src_ID] != null)
                 {
-                    if (RTData[Src_ID] != null)
+                    switch (Octave)
                     {
-                        RTData[Src_ID].GetPressure(Rec_ID, out P);//8,
-                    }
-                    else
-                    {
-                        P = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
-                    }
-
-                    if (Direct[Src_ID] != null && Direct[Src_ID].IsOccluded(Rec_ID))
-                    {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct[Src_ID].Time(Rec_ID) * Sampling_Frequency);
-                            
-                        for (int i = 0; i < Direct[Src_ID].P[Rec_ID].GetLength(0); i++)
-                        {
-                            P[D_Start + i] += Direct[Src_ID].P[Rec_ID][i];
-                        }
-                    }
-
-                    if (ISData[Src_ID] != null)
-                    {
-                        foreach (Deterministic_Reflection value in ISData[Src_ID].Paths[Rec_ID])
-                        {
-                            if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < P.Length - 1)
+                        case 8:
+                            foreach (Deterministic_Reflection value in ISData[Src_ID].Paths[Rec_ID])
                             {
-                                int end = value.Pressure.Length < P.Length - (int)Math.Ceiling(Sampling_Frequency * value.TravelTime) ? value.Pressure.Length : P.Length - (int)Math.Ceiling(Sampling_Frequency * value.TravelTime); 
-                                for (int t = 0; t < end; t++) P[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime) + t] += (float)value.Pressure[t];
+                                if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
+                                {
+                                    for (int oct = 0; oct < 8; oct++)
+                                    {
+                                        double[] e = value.Energy(oct);
+                                        for (int t = 0; t < e.Length; t++) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime) + t] += e[t];
+                                    }
+                                }
                             }
-                        }
+                            break;
+                        default:
+                            foreach (Deterministic_Reflection value in ISData[Src_ID].Paths[Rec_ID])
+                            {
+                                if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
+                                {
+                                    double[] e = value.Energy(Octave);
+                                    for (int t = 0; t < e.Length; t++) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime) + t] += e[t];
+                                }
+                            }
+                            break;
+                    }
+                }
+                return Histogram;
+            }
+
+            /// <summary>
+            /// Calculates pressure impulse response from simulation output.
+            /// </summary>
+            /// <param name="Direct"></param>
+            /// <param name="ISData"></param>
+            /// <param name="RTData"></param>
+            /// <param name="CO_Time"></param>
+            /// <param name="Sampling_Frequency"></param>
+            /// <param name="Octave">the chosen octave band.</param>
+            /// <param name="Rec_ID">the id of the selected receiver.</param>
+            /// <returns></returns>
+            public static void PTCurve(Direct_Sound[] Direct, ImageSourceData[] ISData, Environment.Receiver_Bank[] RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, int Src_ID, bool Start_at_Zero, out double[] P)
+            {
+                if (RTData[Src_ID] != null)
+                {
+                    RTData[Src_ID].GetPressure(Rec_ID, out P);//8,
+                }
+                else
+                {
+                    P = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
+                }
+
+                if (Direct[Src_ID] != null && Direct[Src_ID].IsOccluded(Rec_ID))
+                {
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct[Src_ID].Time(Rec_ID) * Sampling_Frequency);
+
+                    for (int i = 0; i < Direct[Src_ID].P[Rec_ID].GetLength(0); i++)
+                    {
+                        P[D_Start + i] += Direct[Src_ID].P[Rec_ID][i];
                     }
                 }
 
-                public static double[][] ETCurve_1d_Tight(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+                if (ISData[Src_ID] != null)
                 {
-                    //TODO: Make provisions for specifying source delays...
-                    double[][] Histogram = new double[3][];
+                    foreach (Deterministic_Reflection value in ISData[Src_ID].Paths[Rec_ID])
+                    {
+                        if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < P.Length - 1)
+                        {
+                            int end = value.Pressure.Length < P.Length - (int)Math.Ceiling(Sampling_Frequency * value.TravelTime) ? value.Pressure.Length : P.Length - (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
+                            for (int t = 0; t < end; t++) P[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime) + t] += (float)value.Pressure[t];
+                        }
+                    }
+                }
+            }
 
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+            public static double[][] ETCurve_1d_Tight(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+            {
+                //TODO: Make provisions for specifying source delays...
+                double[][] Histogram = new double[3][];
 
-                    double maxdelay = 0;
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+
+                double maxdelay = 0;
 
                 List<double> delays = new List<double>();
 
@@ -532,24 +532,24 @@ namespace Pachyderm_Acoustic
 
                 maxdelay *= Sampling_Frequency / 1000;
 
-                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
 
-                    foreach (int s in SrcIDs)
+                foreach (int s in SrcIDs)
+                {
+                    double[][] IR = ETCurve_1d_Tight((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
+                    //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
+                    for (int d = 0; d < 3; d++)
                     {
-                        double[][] IR = ETCurve_1d_Tight((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
-                        //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
-                        for (int d = 0; d < 3; d++)
+                        for (int i = 0; i < IR[0].Length; i++)
                         {
-                            for (int i = 0; i < IR[0].Length; i++)
-                            {
-                                Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
-                            }
+                            Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
                         }
                     }
-                    return Histogram;
                 }
+                return Histogram;
+            }
 
             public static double[][] ETCurve_1d_Tight(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, bool Start_at_Zero, double alt, double azi, bool degrees)
             {
@@ -659,7 +659,7 @@ namespace Pachyderm_Acoustic
                     }
                 }
 
-                for(int i = 0; i < Histogram.Length; i++)
+                for (int i = 0; i < Histogram.Length; i++)
                 {
                     for (int j = 0; j < Histogram[i].Length; j++)
                     {
@@ -721,102 +721,102 @@ namespace Pachyderm_Acoustic
             }
 
             public static double[][] ETCurve_1d(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, bool Start_at_Zero, double alt, double azi, bool degrees)
+            {
+                double[][] Histogram = new double[3][];
+                Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
+                Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
+                Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
+                if (RTData != null)
                 {
-                    double[][] Histogram = new double[3][];
-                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
-                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
-                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
-                    if (RTData != null)
+                    for (int i = 0; i < Histogram[0].Length; i++)
                     {
-                        for (int i = 0; i < Histogram[0].Length; i++)
-                        {
-                            Hare.Geometry.Vector Vpos = RTData.Directions_Pos(Octave, i, Rec_ID, alt, azi, degrees);
-                            Hare.Geometry.Vector Vneg = RTData.Directions_Neg(Octave, i, Rec_ID, alt, azi, degrees);
+                        Hare.Geometry.Vector Vpos = RTData.Directions_Pos(Octave, i, Rec_ID, alt, azi, degrees);
+                        Hare.Geometry.Vector Vneg = RTData.Directions_Neg(Octave, i, Rec_ID, alt, azi, degrees);
 
-                            double E = RTData.Rec_List[Rec_ID].Energy(i, Octave);
-                            Hare.Geometry.Vector VTot = new Hare.Geometry.Vector(Math.Abs(Vpos.x) - Math.Abs(Vneg.x), Math.Abs(Vpos.y) - Math.Abs(Vneg.y), Math.Abs(Vpos.z) - Math.Abs(Vneg.z));
-                            VTot.Normalize();
-                            VTot *= E;
+                        double E = RTData.Rec_List[Rec_ID].Energy(i, Octave);
+                        Hare.Geometry.Vector VTot = new Hare.Geometry.Vector(Math.Abs(Vpos.x) - Math.Abs(Vneg.x), Math.Abs(Vpos.y) - Math.Abs(Vneg.y), Math.Abs(Vpos.z) - Math.Abs(Vneg.z));
+                        VTot.Normalize();
+                        VTot *= E;
 
-                            Histogram[0][i] = VTot.x;
-                            Histogram[1][i] = VTot.y;
-                            Histogram[2][i] = VTot.z;
-                        }
+                        Histogram[0][i] = VTot.x;
+                        Histogram[1][i] = VTot.y;
+                        Histogram[2][i] = VTot.z;
                     }
-
-                    if (Direct != null && Direct.IsOccluded(Rec_ID))
-                    {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
-
-                        Hare.Geometry.Vector[] DirectValue;
-                        switch (Octave)
-                        {
-                            case 8:
-                                DirectValue = Direct.Dir_Energy_Sum(Rec_ID, alt, azi, degrees);
-                                break;
-                            default:
-                                DirectValue = Direct.Dir_Energy(Octave, Rec_ID, alt, azi, degrees);
-                                break;
-                        }
-
-                        for (int i = 0; i < DirectValue.Length; i++)
-                        {
-                            Histogram[0][D_Start + i] += Math.Abs(DirectValue[i].x);
-                            Histogram[1][D_Start + i] += Math.Abs(DirectValue[i].y);
-                            Histogram[2][D_Start + i] += Math.Abs(DirectValue[i].z);
-                        }
-                    }
-
-                    if (ISData != null)
-                    {
-                        switch (Octave)
-                        {
-                            case 8:
-                                foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
-                                {
-                                    if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
-                                    {
-                                        Hare.Geometry.Vector[] E_Sum = value.Dir_EnergySum(alt, azi, degrees);
-                                        for (int i = 0; i < E_Sum.Length; i++)
-                                        {
-                                            Histogram[0][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Sum[i].x);
-                                            Histogram[1][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Sum[i].y);
-                                            Histogram[2][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Sum[i].z);
-                                        }
-                                    }
-                                }
-                                break;
-                            default:
-                                foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
-                                {
-                                    if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
-                                    {
-                                        Hare.Geometry.Vector[] E_Dir = value.Dir_Energy(Octave, alt, azi, degrees);
-                                        for (int i = 0; i < E_Dir.Length; i++)
-                                        {
-                                            Histogram[0][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Dir[i].x);
-                                            Histogram[1][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Dir[i].y);
-                                            Histogram[2][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Dir[i].z);
-                                        }
-                                    }
-                                }
-                                break;
-                        }
-                    }
-                    return Histogram;
                 }
 
-                public static double[] ETCurve_Directional(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+                if (Direct != null && Direct.IsOccluded(Rec_ID))
                 {
-                    //TODO: Make provisions for specifying source delays...
-                    //double[] Histogram = new double[(int)(CO_Time * Sampling_Frequency)];
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
 
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+                    Hare.Geometry.Vector[] DirectValue;
+                    switch (Octave)
+                    {
+                        case 8:
+                            DirectValue = Direct.Dir_Energy_Sum(Rec_ID, alt, azi, degrees);
+                            break;
+                        default:
+                            DirectValue = Direct.Dir_Energy(Octave, Rec_ID, alt, azi, degrees);
+                            break;
+                    }
 
-                    double maxdelay = 0;
+                    for (int i = 0; i < DirectValue.Length; i++)
+                    {
+                        Histogram[0][D_Start + i] += Math.Abs(DirectValue[i].x);
+                        Histogram[1][D_Start + i] += Math.Abs(DirectValue[i].y);
+                        Histogram[2][D_Start + i] += Math.Abs(DirectValue[i].z);
+                    }
+                }
+
+                if (ISData != null)
+                {
+                    switch (Octave)
+                    {
+                        case 8:
+                            foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
+                            {
+                                if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
+                                {
+                                    Hare.Geometry.Vector[] E_Sum = value.Dir_EnergySum(alt, azi, degrees);
+                                    for (int i = 0; i < E_Sum.Length; i++)
+                                    {
+                                        Histogram[0][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Sum[i].x);
+                                        Histogram[1][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Sum[i].y);
+                                        Histogram[2][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Sum[i].z);
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
+                            {
+                                if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
+                                {
+                                    Hare.Geometry.Vector[] E_Dir = value.Dir_Energy(Octave, alt, azi, degrees);
+                                    for (int i = 0; i < E_Dir.Length; i++)
+                                    {
+                                        Histogram[0][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Dir[i].x);
+                                        Histogram[1][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Dir[i].y);
+                                        Histogram[2][(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i / Sampling_Frequency)] += Math.Abs(E_Dir[i].z);
+                                    }
+                                }
+                            }
+                            break;
+                    }
+                }
+                return Histogram;
+            }
+
+            public static double[] ETCurve_Directional(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+            {
+                //TODO: Make provisions for specifying source delays...
+                //double[] Histogram = new double[(int)(CO_Time * Sampling_Frequency)];
+
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+
+                double maxdelay = 0;
                 List<double> delays = new List<double>();
 
                 if ((Direct as List<Direct_Sound>)[0] != null)
@@ -838,125 +838,125 @@ namespace Pachyderm_Acoustic
 
                 maxdelay *= Sampling_Frequency / 1000;
 
-                    double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
 
-                    foreach (int s in SrcIDs)
+                foreach (int s in SrcIDs)
+                {
+                    double[] IR = ETCurve_Directional((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
+                    //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
+                    //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
+                    for (int i = 0; i < IR.Length; i++)
                     {
-                        double[] IR = ETCurve_Directional((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
-                        //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
-                        //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
-                        for (int i = 0; i < IR.Length; i++)
-                        {
-                            Histogram[i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[i];
-                        }
+                        Histogram[i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[i];
                     }
-                    return Histogram;
+                }
+                return Histogram;
+            }
+
+            public static double[] ETCurve_Directional(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, bool Start_at_Zero, double alt, double azi, bool degrees)
+            {
+                double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
+                if (RTData != null)
+                {
+                    for (int i = 0; i < Histogram.Length; i++)
+                    {
+                        Hare.Geometry.Vector Vpos = RTData.Directions_Pos(Octave, i, Rec_ID, alt, azi, degrees);
+                        Hare.Geometry.Vector Vneg = RTData.Directions_Neg(Octave, i, Rec_ID, alt, azi, degrees);
+
+                        double E = RTData.Rec_List[Rec_ID].Energy(i, Octave);
+                        Hare.Geometry.Vector VTot = new Hare.Geometry.Vector(Math.Abs(Vpos.x) - Math.Abs(Vneg.x), Math.Abs(Vpos.y) - Math.Abs(Vneg.y), Math.Abs(Vpos.z) - Math.Abs(Vneg.z));
+
+                        if (Vpos.x > 0)
+                        {
+                            Histogram[i] += Math.Abs(Vpos.x);
+                        }
+                        if (Vneg.x > 0)
+                        {
+                            Histogram[i] += Math.Abs(Vneg.x);
+                        }
+
+                        double L = VTot.Length();
+                        if (L > 0) Histogram[i] *= E / L;
+
+                        //if (AcousticalMath.SPL_Intensity(Histogram[i]) > 200)
+                        //{
+                        //    Rhino.RhinoApp.Write("Super high SPLs... what's going on, man?");
+                        //}
+                    }
                 }
 
-                public static double[] ETCurve_Directional(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, bool Start_at_Zero, double alt, double azi, bool degrees)
+                if (Direct != null && Direct.IsOccluded(Rec_ID))
                 {
-                    double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency)];
-                    if (RTData != null)
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
+
+                    Hare.Geometry.Vector[] DirectValue;
+                    switch (Octave)
                     {
-                        for (int i = 0; i < Histogram.Length; i++)
-                        {
-                            Hare.Geometry.Vector Vpos = RTData.Directions_Pos(Octave, i, Rec_ID, alt, azi, degrees);
-                            Hare.Geometry.Vector Vneg = RTData.Directions_Neg(Octave, i, Rec_ID, alt, azi, degrees);
-
-                            double E = RTData.Rec_List[Rec_ID].Energy(i, Octave);
-                            Hare.Geometry.Vector VTot = new Hare.Geometry.Vector(Math.Abs(Vpos.x) - Math.Abs(Vneg.x), Math.Abs(Vpos.y) - Math.Abs(Vneg.y), Math.Abs(Vpos.z) - Math.Abs(Vneg.z));
-
-                            if (Vpos.x > 0)
-                            {
-                                Histogram[i] += Math.Abs(Vpos.x);
-                            }
-                            if (Vneg.x > 0)
-                            {
-                                Histogram[i] += Math.Abs(Vneg.x);
-                            }
-
-                            double L = VTot.Length();
-                            if (L > 0) Histogram[i] *= E / L;
-
-                            //if (AcousticalMath.SPL_Intensity(Histogram[i]) > 200)
-                            //{
-                            //    Rhino.RhinoApp.Write("Super high SPLs... what's going on, man?");
-                            //}
-                        }
+                        case 8:
+                            DirectValue = Direct.Dir_Energy_Sum(Rec_ID, alt, azi, degrees);
+                            break;
+                        default:
+                            DirectValue = Direct.Dir_Energy(Octave, Rec_ID, alt, azi, degrees);
+                            break;
                     }
 
-                    if (Direct != null && Direct.IsOccluded(Rec_ID))
+                    for (int i = 0; i < DirectValue.Length; i++)
                     {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
-
-                        Hare.Geometry.Vector[] DirectValue;
-                        switch (Octave)
-                        {
-                            case 8:
-                                DirectValue = Direct.Dir_Energy_Sum(Rec_ID, alt, azi, degrees);
-                                break;
-                            default:
-                                DirectValue = Direct.Dir_Energy(Octave, Rec_ID, alt, azi, degrees);
-                                break;
-                        }
-
-                        for (int i = 0; i < DirectValue.Length; i++)
-                        {
-                            if (DirectValue[i].x > 0) Histogram[D_Start + i] += Math.Abs(DirectValue[i].x);
-                        }
+                        if (DirectValue[i].x > 0) Histogram[D_Start + i] += Math.Abs(DirectValue[i].x);
                     }
-
-                    if (ISData != null)
-                    {
-                        switch (Octave)
-                        {
-                            case 8:
-                                foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
-                                {
-                                    if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
-                                    {
-                                        Hare.Geometry.Vector[] E_Sum = value.Dir_EnergySum(alt, azi, degrees);
-                                        for (int i = 0; i < E_Sum.Length; i++)
-                                        {
-                                            if (E_Sum[i].x > 0) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i)] += Math.Abs(E_Sum[i].x);
-                                        }
-                                    }
-                                }
-                                break;
-                            default:
-                                foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
-                                {
-                                    if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
-                                    {
-                                        Hare.Geometry.Vector[] E_Dir = value.Dir_Energy(Octave, alt, azi, degrees);
-                                        for (int i = 0; i < E_Dir.Length; i++)
-                                        {
-                                            if (E_Dir[i].x > 0) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i)] += Math.Abs(E_Dir[i].x);
-                                        }
-                                    }
-                                }
-                                break;
-                        }
-                    }
-                    return Histogram;
                 }
 
-                public static double[][] PTCurve_Ambisonics2(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+                if (ISData != null)
                 {
-                    //TODO: Make provisions for specifying source delays...
-                    double[][] Histogram = new double[5][];
-                    //Histogram[0] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[1] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[2] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[3] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[4] = new double[(int)(CO_Time * Sampling_Frequency)];
+                    switch (Octave)
+                    {
+                        case 8:
+                            foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
+                            {
+                                if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
+                                {
+                                    Hare.Geometry.Vector[] E_Sum = value.Dir_EnergySum(alt, azi, degrees);
+                                    for (int i = 0; i < E_Sum.Length; i++)
+                                    {
+                                        if (E_Sum[i].x > 0) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i)] += Math.Abs(E_Sum[i].x);
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
+                            {
+                                if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
+                                {
+                                    Hare.Geometry.Vector[] E_Dir = value.Dir_Energy(Octave, alt, azi, degrees);
+                                    for (int i = 0; i < E_Dir.Length; i++)
+                                    {
+                                        if (E_Dir[i].x > 0) Histogram[(int)Math.Ceiling(Sampling_Frequency * value.TravelTime + i)] += Math.Abs(E_Dir[i].x);
+                                    }
+                                }
+                            }
+                            break;
+                    }
+                }
+                return Histogram;
+            }
 
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+            public static double[][] PTCurve_Ambisonics2(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+            {
+                //TODO: Make provisions for specifying source delays...
+                double[][] Histogram = new double[5][];
+                //Histogram[0] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[1] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[2] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[3] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[4] = new double[(int)(CO_Time * Sampling_Frequency)];
 
-                    double maxdelay = 0;
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+
+                double maxdelay = 0;
                 List<double> delays = new List<double>();
 
                 if ((Direct as List<Direct_Sound>)[0] != null)
@@ -977,45 +977,45 @@ namespace Pachyderm_Acoustic
                 }
                 maxdelay *= Sampling_Frequency / 1000;
 
-                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[3] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[3] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
 
-                    foreach (int s in SrcIDs)
+                foreach (int s in SrcIDs)
+                {
+                    double[][] IR = PTCurve_Ambisonics2((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
+                    //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
+                    //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
+                    for (int d = 0; d < IR.Length; d++)
                     {
-                        double[][] IR = PTCurve_Ambisonics2((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
-                        //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
-                        //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
-                        for (int d = 0; d < IR.Length; d++)
+                        for (int i = 0; i < IR[0].Length; i++)
                         {
-                            for (int i = 0; i < IR[0].Length; i++)
-                            {
-                                Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
-                            }
+                            Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
                         }
                     }
-                    return Histogram;
                 }
+                return Histogram;
+            }
 
-                public static double[][] PTCurve_Ambisonics3(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
-                {
-                    //TODO: Make provisions for specifying source delays...
-                    double[][] Histogram = new double[7][];
-                    //Histogram[0] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[1] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[2] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[3] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[4] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[5] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[6] = new double[(int)(CO_Time * Sampling_Frequency)];
+            public static double[][] PTCurve_Ambisonics3(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+            {
+                //TODO: Make provisions for specifying source delays...
+                double[][] Histogram = new double[7][];
+                //Histogram[0] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[1] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[2] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[3] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[4] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[5] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[6] = new double[(int)(CO_Time * Sampling_Frequency)];
 
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
 
-                    double maxdelay = 0;
+                double maxdelay = 0;
                 List<double> delays = new List<double>();
 
                 if ((Direct as List<Direct_Sound>)[0] != null)
@@ -1036,30 +1036,30 @@ namespace Pachyderm_Acoustic
                 }
                 maxdelay *= Sampling_Frequency / 1000;
 
-                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[3] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[5] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[6] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[3] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[5] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[6] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
 
-                    foreach (int s in SrcIDs)
+                foreach (int s in SrcIDs)
+                {
+                    double[][] IR = PTCurve_Ambisonics3((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
+                    //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
+                    //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
+                    for (int d = 0; d < IR.Length; d++)
                     {
-                        double[][] IR = PTCurve_Ambisonics3((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
-                        //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
-                        //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
-                        for (int d = 0; d < IR.Length; d++)
+                        for (int i = 0; i < IR[0].Length; i++)
                         {
-                            for (int i = 0; i < IR[0].Length; i++)
-                            {
-                                Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
-                            }
+                            Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
                         }
                     }
-
-                    return Histogram;
                 }
+
+                return Histogram;
+            }
 
 
             /// <summary>
@@ -1077,244 +1077,244 @@ namespace Pachyderm_Acoustic
             /// <param name="degrees"></param>
             /// <returns></returns>
 
-                public static double[][] PTCurve_Ambisonics2(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, bool Start_at_Zero, double xpos_alt, double xpos_azi, bool degrees)
+            public static double[][] PTCurve_Ambisonics2(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, bool Start_at_Zero, double xpos_alt, double xpos_azi, bool degrees)
+            {
+                double[][] Histogram = new double[5][];
+                if (RTData != null)
                 {
-                    double[][] Histogram = new double[5][];
-                    if (RTData != null)
+                    double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
+                    Histogram[0] = new double[hist_temp[0].Length];
+                    Histogram[1] = new double[hist_temp[0].Length];
+                    Histogram[2] = new double[hist_temp[0].Length];
+                    Histogram[3] = new double[hist_temp[0].Length];
+                    Histogram[4] = new double[hist_temp[0].Length];
+                    for (int i = 0; i < hist_temp[0].Length; i++)
                     {
-                        double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
-                        Histogram[0] = new double[hist_temp[0].Length];
-                        Histogram[1] = new double[hist_temp[0].Length];
-                        Histogram[2] = new double[hist_temp[0].Length];
-                        Histogram[3] = new double[hist_temp[0].Length];
-                        Histogram[4] = new double[hist_temp[0].Length];
-                        for (int i = 0; i < hist_temp[0].Length; i++)
-                        {
-                            Hare.Geometry.Vector Vpos = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[0][i], hist_temp[2][i], hist_temp[4][i]), xpos_azi, 0, true), 0, xpos_alt, true);
-                            Hare.Geometry.Vector Vneg = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(-hist_temp[1][i], - hist_temp[3][i], - hist_temp[5][i]), xpos_azi, 0, true), 0, xpos_alt, true);
-                            double magpos = Math.Sqrt(Vpos.x * Vpos.x + Vpos.y * Vpos.y + Vpos.z * Vpos.z);
-                            double magneg = Math.Sqrt(Vneg.x * Vneg.x + Vneg.y * Vneg.y + Vneg.z * Vneg.z);
-                            double phipos = Math.Asin(Vpos.z / magpos);
-                            double phineg = Math.Asin(Vneg.z / magneg);
-                            double thetapos = Math.Asin(Vpos.y / magpos / Math.Cos(phipos));
-                            double thetaneg = Math.Asin(Vneg.y / magneg / Math.Cos(phineg));
-                            double rt3_2 = Math.Sqrt(3)/2;
-                            
-                            double sin2phpos = Math.Sin(2 * phipos);
-                            double sin2phneg = Math.Sin(2 * phineg);
-                            double cossqphpos = Math.Cos(phipos) * Math.Cos(phipos);
-                            double cossqphneg = Math.Cos(phineg) * Math.Cos(phineg);
+                        Hare.Geometry.Vector Vpos = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[0][i], hist_temp[2][i], hist_temp[4][i]), xpos_azi, 0, true), 0, xpos_alt, true);
+                        Hare.Geometry.Vector Vneg = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(-hist_temp[1][i], -hist_temp[3][i], -hist_temp[5][i]), xpos_azi, 0, true), 0, xpos_alt, true);
+                        double magpos = Math.Sqrt(Vpos.x * Vpos.x + Vpos.y * Vpos.y + Vpos.z * Vpos.z);
+                        double magneg = Math.Sqrt(Vneg.x * Vneg.x + Vneg.y * Vneg.y + Vneg.z * Vneg.z);
+                        double phipos = Math.Asin(Vpos.z / magpos);
+                        double phineg = Math.Asin(Vneg.z / magneg);
+                        double thetapos = Math.Asin(Vpos.y / magpos / Math.Cos(phipos));
+                        double thetaneg = Math.Asin(Vneg.y / magneg / Math.Cos(phineg));
+                        double rt3_2 = Math.Sqrt(3) / 2;
 
-                            Histogram[0][i] = magpos * (3 * (Math.Sin(phipos) * Math.Sin(phipos) - 1) / 2 + magneg * 3 * Math.Sin(phineg) * Math.Sin(phineg) - 1) / 2;
-                            Histogram[1][i] = rt3_2 * (Math.Cos(thetapos) * sin2phpos * magpos + Math.Cos(thetaneg) * sin2phneg * magneg);
-                            Histogram[2][i] = rt3_2 * (Math.Sin(thetapos) * sin2phpos * magpos + Math.Sin(thetaneg) * sin2phneg * magneg); 
-                            Histogram[3][i] = rt3_2 * (Math.Cos(2 * thetapos) * cossqphpos * magpos + Math.Cos(2 * thetaneg) * cossqphneg * magneg);
-                            Histogram[4][i] = rt3_2 * (Math.Sin(2 * thetapos) * cossqphpos * magpos + Math.Sin(2 * thetaneg) * cossqphneg * magneg);
-                        }
+                        double sin2phpos = Math.Sin(2 * phipos);
+                        double sin2phneg = Math.Sin(2 * phineg);
+                        double cossqphpos = Math.Cos(phipos) * Math.Cos(phipos);
+                        double cossqphneg = Math.Cos(phineg) * Math.Cos(phineg);
+
+                        Histogram[0][i] = magpos * (3 * (Math.Sin(phipos) * Math.Sin(phipos) - 1) / 2 + magneg * 3 * Math.Sin(phineg) * Math.Sin(phineg) - 1) / 2;
+                        Histogram[1][i] = rt3_2 * (Math.Cos(thetapos) * sin2phpos * magpos + Math.Cos(thetaneg) * sin2phneg * magneg);
+                        Histogram[2][i] = rt3_2 * (Math.Sin(thetapos) * sin2phpos * magpos + Math.Sin(thetaneg) * sin2phneg * magneg);
+                        Histogram[3][i] = rt3_2 * (Math.Cos(2 * thetapos) * cossqphpos * magpos + Math.Cos(2 * thetaneg) * cossqphneg * magneg);
+                        Histogram[4][i] = rt3_2 * (Math.Sin(2 * thetapos) * cossqphpos * magpos + Math.Sin(2 * thetaneg) * cossqphneg * magneg);
                     }
-                    else
+                }
+                else
+                {
+                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[5] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                }
+
+                if (Direct != null && Direct.IsOccluded(Rec_ID))
+                {
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
+
+                    double[][] V = Direct.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, true);
+                    for (int i = 0; i < V.Length; i++)
                     {
-                        Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[5] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                        double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
+                        double phi = Math.Asin(V[i][2] / mag);
+                        double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
+                        double rt3_2 = Math.Sqrt(3) / 2;
+
+                        double sin2phi = Math.Sin(2 * phi);
+                        double cossqphi = Math.Cos(phi) * Math.Cos(phi);
+
+                        Histogram[0][i + D_Start] += mag * 3 * (Math.Sin(phi) * Math.Sin(phi) - 1) / 2;
+                        Histogram[1][i + D_Start] += rt3_2 * Math.Cos(theta) * sin2phi * mag;
+                        Histogram[2][i + D_Start] += rt3_2 * Math.Sin(theta) * sin2phi * mag;
+                        Histogram[3][i + D_Start] += rt3_2 * Math.Cos(2 * theta) * cossqphi * mag;
+                        Histogram[4][i + D_Start] += rt3_2 * Math.Sin(2 * theta) * cossqphi * mag;
                     }
+                }
 
-                    if (Direct != null && Direct.IsOccluded(Rec_ID))
+                if (ISData != null)
+                {
+                    foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
                     {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
-
-                        double[][] V = Direct.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, true);
-                        for (int i = 0; i < V.Length; i++)
+                        if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
                         {
-                            double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
-                            double phi = Math.Asin(V[i][2] / mag);
-                            double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
-                            double rt3_2 = Math.Sqrt(3) / 2;
+                            int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
 
-                            double sin2phi = Math.Sin(2 * phi);
-                            double cossqphi = Math.Cos(phi) * Math.Cos(phi);
+                            double[][] V = value.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, Sampling_Frequency);
 
-                            Histogram[0][i + D_Start] += mag * 3 * (Math.Sin(phi) * Math.Sin(phi) - 1) / 2;
-                            Histogram[1][i + D_Start] += rt3_2 * Math.Cos(theta) * sin2phi * mag;
-                            Histogram[2][i + D_Start] += rt3_2 * Math.Sin(theta) * sin2phi * mag;
-                            Histogram[3][i + D_Start] += rt3_2 * Math.Cos(2 * theta) * cossqphi * mag;
-                            Histogram[4][i + D_Start] += rt3_2 * Math.Sin(2 * theta) * cossqphi * mag;
-                        }
-                    }
-
-                    if (ISData != null)
-                    {
-                        foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
-                        {
-                            if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
+                            Hare.Geometry.Vector dir = value.Path[0][value.Path[0].Length - 1] - value.Path[0][value.Path[0].Length - 2];
+                            dir.Normalize();
+                            for (int i = 0; i < V.Length; i++)
                             {
-                                int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
+                                double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
+                                double phi = Math.Asin(V[i][2] / mag);
+                                double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
+                                double rt3_2 = Math.Sqrt(3) / 2;
 
-                                double[][] V = value.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, Sampling_Frequency);
+                                double sin2phi = Math.Sin(2 * phi);
+                                double cossqphi = Math.Cos(phi) * Math.Cos(phi);
 
-                                Hare.Geometry.Vector dir = value.Path[0][value.Path[0].Length - 1] - value.Path[0][value.Path[0].Length - 2];
-                                dir.Normalize();
-                                for (int i = 0; i < V.Length; i++)
-                                {
-                                    double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
-                                    double phi = Math.Asin(V[i][2] / mag);
-                                    double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
-                                    double rt3_2 = Math.Sqrt(3) / 2;
-
-                                    double sin2phi = Math.Sin(2 * phi);
-                                    double cossqphi = Math.Cos(phi) * Math.Cos(phi);
-
-                                    Histogram[0][i + R_Start] += mag * 3 * (Math.Sin(phi) * Math.Sin(phi) - 1) / 2;
-                                    Histogram[1][i + R_Start] += rt3_2 * Math.Cos(theta) * sin2phi * mag;
-                                    Histogram[2][i + R_Start] += rt3_2 * Math.Sin(theta) * sin2phi * mag;
-                                    Histogram[3][i + R_Start] += rt3_2 * Math.Cos(2 * theta) * cossqphi * mag;
-                                    Histogram[4][i + R_Start] += rt3_2 * Math.Sin(2 * theta) * cossqphi * mag;
-                                }
+                                Histogram[0][i + R_Start] += mag * 3 * (Math.Sin(phi) * Math.Sin(phi) - 1) / 2;
+                                Histogram[1][i + R_Start] += rt3_2 * Math.Cos(theta) * sin2phi * mag;
+                                Histogram[2][i + R_Start] += rt3_2 * Math.Sin(theta) * sin2phi * mag;
+                                Histogram[3][i + R_Start] += rt3_2 * Math.Cos(2 * theta) * cossqphi * mag;
+                                Histogram[4][i + R_Start] += rt3_2 * Math.Sin(2 * theta) * cossqphi * mag;
                             }
                         }
                     }
-                    return Histogram;
                 }
+                return Histogram;
+            }
 
             public static double[][] PTCurve_Ambisonics3(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, bool Start_at_Zero, double xpos_alt, double xpos_azi, bool degrees)
+            {
+                double[][] Histogram = new double[7][];
+                if (RTData != null)
                 {
-                    double[][] Histogram = new double[7][];
-                    if (RTData != null)
+                    double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
+                    Histogram[0] = new double[hist_temp[0].Length];
+                    Histogram[1] = new double[hist_temp[0].Length];
+                    Histogram[2] = new double[hist_temp[0].Length];
+                    Histogram[3] = new double[hist_temp[0].Length];
+                    Histogram[4] = new double[hist_temp[0].Length];
+                    Histogram[5] = new double[hist_temp[0].Length];
+                    Histogram[6] = new double[hist_temp[0].Length];
+
+                    for (int i = 0; i < hist_temp[0].Length; i++)
                     {
-                        double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
-                        Histogram[0] = new double[hist_temp[0].Length];
-                        Histogram[1] = new double[hist_temp[0].Length];
-                        Histogram[2] = new double[hist_temp[0].Length];
-                        Histogram[3] = new double[hist_temp[0].Length];
-                        Histogram[4] = new double[hist_temp[0].Length];
-                        Histogram[5] = new double[hist_temp[0].Length];
-                        Histogram[6] = new double[hist_temp[0].Length];
+                        Hare.Geometry.Vector Vpos = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[0][i], hist_temp[2][i], hist_temp[4][i]), xpos_azi, 0, true), 0, xpos_alt, true);
+                        Hare.Geometry.Vector Vneg = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(-hist_temp[1][i], -hist_temp[3][i], -hist_temp[5][i]), xpos_azi, 0, true), 0, xpos_alt, true);
+                        double magpos = Math.Sqrt(Vpos.x * Vpos.x + Vpos.y * Vpos.y + Vpos.z * Vpos.z);
+                        double magneg = Math.Sqrt(Vneg.x * Vneg.x + Vneg.y * Vneg.y + Vneg.z * Vneg.z);
+                        double phipos = Math.Asin(Vpos.z / magpos);
+                        double phineg = Math.Asin(Vneg.z / magneg);
+                        double thetapos = Math.Asin(Vpos.y / magpos / Math.Cos(phipos));
+                        double thetaneg = Math.Asin(Vneg.y / magneg / Math.Cos(phineg));
+                        double rt3_8 = Math.Sqrt(3) / 8;
+                        double rt15_2 = Math.Sqrt(15) / 2;
+                        double rt5_8 = Math.Sqrt(5) / 8;
 
-                        for (int i = 0; i < hist_temp[0].Length; i++)
-                        {
-                            Hare.Geometry.Vector Vpos = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[0][i], hist_temp[2][i], hist_temp[4][i]), xpos_azi, 0, true), 0, xpos_alt, true);
-                            Hare.Geometry.Vector Vneg = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(-hist_temp[1][i], - hist_temp[3][i], - hist_temp[5][i]), xpos_azi, 0, true), 0, xpos_alt, true);
-                            double magpos = Math.Sqrt(Vpos.x * Vpos.x + Vpos.y * Vpos.y + Vpos.z * Vpos.z);
-                            double magneg = Math.Sqrt(Vneg.x * Vneg.x + Vneg.y * Vneg.y + Vneg.z * Vneg.z);
-                            double phipos = Math.Asin(Vpos.z / magpos);
-                            double phineg = Math.Asin(Vneg.z / magneg);
-                            double thetapos = Math.Asin(Vpos.y / magpos / Math.Cos(phipos));
-                            double thetaneg = Math.Asin(Vneg.y / magneg / Math.Cos(phineg));
-                            double rt3_8 = Math.Sqrt(3)/8;
-                            double rt15_2 = Math.Sqrt(15)/2;
-                            double rt5_8 = Math.Sqrt(5)/8;
+                        double LM_compos = Math.Cos(phipos) * (5 * Math.Pow(Math.Sin(phipos), 2) - 1);
+                        double LM_comneg = Math.Cos(phineg) * (5 * Math.Pow(Math.Sin(phineg), 2) - 1);
+                        double NO_compos = Math.Sin(phipos) * Math.Pow(Math.Cos(phipos), 2);
+                        double NO_comneg = Math.Sin(phineg) * Math.Pow(Math.Cos(phineg), 2);
+                        double PQ_compos = Math.Pow(Math.Cos(phipos), 3);
+                        double PQ_comneg = Math.Pow(Math.Cos(phipos), 3);
 
-                            double LM_compos = Math.Cos(phipos) * (5 * Math.Pow(Math.Sin(phipos),2) - 1);
-                            double LM_comneg = Math.Cos(phineg) * (5 * Math.Pow(Math.Sin(phineg),2) - 1);
-                            double NO_compos = Math.Sin(phipos) * Math.Pow(Math.Cos(phipos),2);
-                            double NO_comneg = Math.Sin(phineg) * Math.Pow(Math.Cos(phineg),2);
-                            double PQ_compos = Math.Pow(Math.Cos(phipos), 3);
-                            double PQ_comneg = Math.Pow(Math.Cos(phipos), 3);
-
-                            Histogram[0][i] = magpos * Math.Sin(phipos) * (5 * Math.Sin(phipos) * Math.Sin(phipos) - 3) / 2 + magneg * Math.Sin(phineg) * (5 * Math.Sin(phineg) * Math.Sin(phineg) - 3) / 2;
-                            Histogram[1][i] = rt3_8 * ( Math.Cos(thetapos) * LM_compos + Math.Cos(thetaneg) * LM_comneg );
-                            Histogram[2][i] = rt3_8 * ( Math.Sin(thetapos) * LM_compos + Math.Sin(thetaneg) * LM_comneg ); 
-                            Histogram[3][i] = rt15_2 * (Math.Cos(2*thetapos) * NO_compos + Math.Cos(2*thetaneg) * NO_compos );
-                            Histogram[4][i] = rt15_2 * (Math.Sin(2*thetapos) * NO_compos + Math.Sin(2*thetaneg) * NO_compos );
-                            Histogram[5][i] = rt5_8 * (Math.Cos(3*thetapos) * PQ_compos + Math.Cos(3*thetaneg) * PQ_compos );
-                            Histogram[6][i] = rt5_8 * (Math.Sin(3*thetapos) * PQ_compos + Math.Sin(3*thetaneg) * PQ_compos );
-                        }
+                        Histogram[0][i] = magpos * Math.Sin(phipos) * (5 * Math.Sin(phipos) * Math.Sin(phipos) - 3) / 2 + magneg * Math.Sin(phineg) * (5 * Math.Sin(phineg) * Math.Sin(phineg) - 3) / 2;
+                        Histogram[1][i] = rt3_8 * (Math.Cos(thetapos) * LM_compos + Math.Cos(thetaneg) * LM_comneg);
+                        Histogram[2][i] = rt3_8 * (Math.Sin(thetapos) * LM_compos + Math.Sin(thetaneg) * LM_comneg);
+                        Histogram[3][i] = rt15_2 * (Math.Cos(2 * thetapos) * NO_compos + Math.Cos(2 * thetaneg) * NO_compos);
+                        Histogram[4][i] = rt15_2 * (Math.Sin(2 * thetapos) * NO_compos + Math.Sin(2 * thetaneg) * NO_compos);
+                        Histogram[5][i] = rt5_8 * (Math.Cos(3 * thetapos) * PQ_compos + Math.Cos(3 * thetaneg) * PQ_compos);
+                        Histogram[6][i] = rt5_8 * (Math.Sin(3 * thetapos) * PQ_compos + Math.Sin(3 * thetaneg) * PQ_compos);
                     }
-                    else
+                }
+                else
+                {
+                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[3] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[5] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[6] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                }
+
+                if (Direct != null && Direct.IsOccluded(Rec_ID))
+                {
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
+
+                    double[][] V = Direct.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, true);
+                    for (int i = 0; i < V.Length; i++)
                     {
-                        Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[3] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[4] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[5] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[6] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                        double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
+                        double phi = Math.Asin(V[i][2] / mag);
+                        double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
+                        double rt3_8 = Math.Sqrt(3) / 8;
+                        double rt15_2 = Math.Sqrt(15) / 2;
+                        double rt5_8 = Math.Sqrt(5) / 8;
+
+                        double LM_com = Math.Cos(phi) * (5 * Math.Pow(Math.Sin(phi), 2) - 1);
+                        double NO_com = Math.Sin(phi) * Math.Pow(Math.Cos(phi), 2);
+                        double PQ_com = Math.Pow(Math.Cos(phi), 3);
+
+                        Histogram[0][i + D_Start] += mag * Math.Sin(phi) * (5 * Math.Sin(phi) * Math.Sin(phi) - 3) / 2;
+                        Histogram[1][i + D_Start] += rt3_8 * Math.Cos(theta) * LM_com;
+                        Histogram[2][i + D_Start] += rt3_8 * Math.Sin(theta) * LM_com;
+                        Histogram[3][i + D_Start] += rt15_2 * Math.Cos(2 * theta) * NO_com;
+                        Histogram[4][i + D_Start] += rt15_2 * Math.Sin(2 * theta) * NO_com;
+                        Histogram[5][i + D_Start] += rt5_8 * Math.Cos(3 * theta) * PQ_com;
+                        Histogram[6][i + D_Start] += rt5_8 * Math.Sin(3 * theta) * PQ_com;
                     }
+                }
 
-                    if (Direct != null && Direct.IsOccluded(Rec_ID))
+                if (ISData != null)
+                {
+                    foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
                     {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
-
-                        double[][] V = Direct.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, true);
-                        for (int i = 0; i < V.Length; i++)
+                        if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
                         {
-                            double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
-                            double phi = Math.Asin(V[i][2] / mag);
-                            double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
-                            double rt3_8 = Math.Sqrt(3)/8;
-                            double rt15_2 = Math.Sqrt(15)/2;
-                            double rt5_8 = Math.Sqrt(5)/8;
+                            int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
 
-                            double LM_com = Math.Cos(phi) * (5 * Math.Pow(Math.Sin(phi),2) - 1);
-                            double NO_com = Math.Sin(phi) * Math.Pow(Math.Cos(phi),2);
-                            double PQ_com = Math.Pow(Math.Cos(phi), 3);
-                            
-                            Histogram[0][i + D_Start] += mag * Math.Sin(phi) * (5 * Math.Sin(phi) * Math.Sin(phi) - 3) / 2;
-                            Histogram[1][i + D_Start] += rt3_8 * Math.Cos(theta) * LM_com;
-                            Histogram[2][i + D_Start] += rt3_8 * Math.Sin(theta) * LM_com;
-                            Histogram[3][i + D_Start] += rt15_2 * Math.Cos(2 * theta) * NO_com;
-                            Histogram[4][i + D_Start] += rt15_2 * Math.Sin(2 * theta) * NO_com;
-                            Histogram[5][i + D_Start] += rt5_8 * Math.Cos(3 * theta) * PQ_com;
-                            Histogram[6][i + D_Start] += rt5_8 * Math.Sin(3 * theta) * PQ_com;
-                        }
-                    }
+                            double[][] V = value.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, Sampling_Frequency);
 
-                    if (ISData != null)
-                    {
-                        foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
-                        {
-                            if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
+                            Hare.Geometry.Vector dir = value.Path[0][value.Path[0].Length - 1] - value.Path[0][value.Path[0].Length - 2];
+                            dir.Normalize();
+                            for (int i = 0; i < V.Length; i++)
                             {
-                                int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
+                                double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
+                                double phi = Math.Asin(V[i][2] / mag);
+                                double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
+                                double rt3_8 = Math.Sqrt(3) / 8;
+                                double rt15_2 = Math.Sqrt(15) / 2;
+                                double rt5_8 = Math.Sqrt(5) / 8;
 
-                                double[][] V = value.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, Sampling_Frequency);
+                                double LM_com = Math.Cos(phi) * (5 * Math.Pow(Math.Sin(phi), 2) - 1);
+                                double NO_com = Math.Sin(phi) * Math.Pow(Math.Cos(phi), 2);
+                                double PQ_com = Math.Pow(Math.Cos(phi), 3);
 
-                                Hare.Geometry.Vector dir = value.Path[0][value.Path[0].Length - 1] - value.Path[0][value.Path[0].Length - 2];
-                                dir.Normalize();
-                                for (int i = 0; i < V.Length; i++)
-                                {
-                                    double mag = Math.Sqrt(V[i][0] * V[i][0] + V[i][1] * V[i][1] + V[i][2] * V[i][2]);
-                                    double phi = Math.Asin(V[i][2] / mag);
-                                    double theta = Math.Asin(V[i][1] / mag / Math.Cos(phi));
-                                    double rt3_8 = Math.Sqrt(3)/8;
-                                    double rt15_2 = Math.Sqrt(15)/2;
-                                    double rt5_8 = Math.Sqrt(5)/8;
-
-                                    double LM_com = Math.Cos(phi) * (5 * Math.Pow(Math.Sin(phi),2) - 1);
-                                    double NO_com = Math.Sin(phi) * Math.Pow(Math.Cos(phi),2);
-                                    double PQ_com = Math.Pow(Math.Cos(phi), 3);
-
-                                    Histogram[0][i + R_Start] += mag * Math.Sin(phi) * (5 * Math.Sin(phi) * Math.Sin(phi) - 3) / 2;
-                                    Histogram[1][i + R_Start] += rt3_8 * Math.Cos(theta) * LM_com;
-                                    Histogram[2][i + R_Start] += rt3_8 * Math.Sin(theta) * LM_com;
-                                    Histogram[3][i + R_Start] += rt15_2 * Math.Cos(2 * theta) * NO_com;
-                                    Histogram[4][i + R_Start] += rt15_2 * Math.Sin(2 * theta) * NO_com;
-                                    Histogram[5][i + R_Start] += rt5_8 * Math.Cos(3 * theta) * PQ_com;
-                                    Histogram[6][i + R_Start] += rt5_8 * Math.Sin(3 * theta) * PQ_com;
-                                }
+                                Histogram[0][i + R_Start] += mag * Math.Sin(phi) * (5 * Math.Sin(phi) * Math.Sin(phi) - 3) / 2;
+                                Histogram[1][i + R_Start] += rt3_8 * Math.Cos(theta) * LM_com;
+                                Histogram[2][i + R_Start] += rt3_8 * Math.Sin(theta) * LM_com;
+                                Histogram[3][i + R_Start] += rt15_2 * Math.Cos(2 * theta) * NO_com;
+                                Histogram[4][i + R_Start] += rt15_2 * Math.Sin(2 * theta) * NO_com;
+                                Histogram[5][i + R_Start] += rt5_8 * Math.Cos(3 * theta) * PQ_com;
+                                Histogram[6][i + R_Start] += rt5_8 * Math.Sin(3 * theta) * PQ_com;
                             }
                         }
                     }
-                    return Histogram;
                 }
+                return Histogram;
+            }
 
-                public static double[][] PTCurve_Fig8_3Axis(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
-                {
-                    //TODO: Make provisions for specifying source delays...
-                    double[][] Histogram = new double[3][];
-                    //Histogram[0] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[1] = new double[(int)(CO_Time * Sampling_Frequency)];
-                    //Histogram[2] = new double[(int)(CO_Time * Sampling_Frequency)];
+            public static double[][] PTCurve_Fig8_3Axis(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+            {
+                //TODO: Make provisions for specifying source delays...
+                double[][] Histogram = new double[3][];
+                //Histogram[0] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[1] = new double[(int)(CO_Time * Sampling_Frequency)];
+                //Histogram[2] = new double[(int)(CO_Time * Sampling_Frequency)];
 
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
 
-                    double maxdelay = 0;
+                double maxdelay = 0;
 
                 List<double> delays = new List<double>();
 
@@ -1337,95 +1337,95 @@ namespace Pachyderm_Acoustic
 
                 maxdelay *= Sampling_Frequency / 1000;
 
-                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
-                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
+                Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 4096 + (int)Math.Ceiling(maxdelay)];
 
-                    foreach (int s in SrcIDs)
+                foreach (int s in SrcIDs)
+                {
+                    double[][] IR = PTCurve_Fig8_3Axis((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
+                    //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
+                    //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
+                    for (int d = 0; d < 3; d++)
                     {
-                        double[][] IR = PTCurve_Fig8_3Axis((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Rec_ID, StartAtZero, alt, azi, degrees);
-                        //Array.Resize(ref IR, IR.Length + (int)Math.Ceiling(maxdelay));
-                        //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
-                        for (int d = 0; d < 3; d++)
+                        for (int i = 0; i < IR[0].Length; i++)
                         {
-                            for (int i = 0; i < IR[0].Length; i++)
+                            Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
+                        }
+                    }
+                }
+                return Histogram;
+            }
+
+            public static double[][] PTCurve_Fig8_3Axis(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, bool Start_at_Zero, double xpos_alt, double xpos_azi, bool degrees)
+            {
+                double[][] Histogram = new double[3][];
+                if (RTData != null)
+                {
+                    double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
+                    Histogram[0] = new double[hist_temp[0].Length];
+                    Histogram[1] = new double[hist_temp[0].Length];
+                    Histogram[2] = new double[hist_temp[0].Length];
+                    for (int i = 0; i < hist_temp[0].Length; i++)
+                    {
+                        Hare.Geometry.Vector V = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[0][i] - hist_temp[1][i], hist_temp[2][i] - hist_temp[3][i], hist_temp[4][i] - hist_temp[5][i]), xpos_azi, 0, true), 0, xpos_alt, true);
+                        Histogram[0][i] = V.x;
+                        Histogram[1][i] = V.y;
+                        Histogram[2][i] = V.z;
+                    }
+                }
+                else
+                {
+                    Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                    Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
+                }
+
+                if (Direct != null && Direct.IsOccluded(Rec_ID))
+                {
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
+
+                    double[][] V = Direct.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, true);
+                    for (int i = 0; i < V.Length; i++)
+                    {
+                        Histogram[0][D_Start + i] += V[i][0];
+                        Histogram[1][D_Start + i] += V[i][1];
+                        Histogram[2][D_Start + i] += V[i][2];
+                    }
+                }
+
+                if (ISData != null)
+                {
+                    foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
+                    {
+                        if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
+                        {
+                            int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
+
+                            double[][] V = value.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, Sampling_Frequency);
+
+                            Hare.Geometry.Vector dir = value.Path[0][value.Path[0].Length - 1] - value.Path[0][value.Path[0].Length - 2];
+                            dir.Normalize();
+                            for (int i = 0; i < value.Pressure.Length; i++)
                             {
-                                Histogram[d][i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[d][i];
+                                Histogram[0][R_Start + i] += V[i][0];
+                                Histogram[1][R_Start + i] += V[i][1];
+                                Histogram[2][R_Start + i] += V[i][2];
                             }
                         }
                     }
-                    return Histogram;
                 }
+                return Histogram;
+            }
 
-                public static double[][] PTCurve_Fig8_3Axis(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Rec_ID, bool Start_at_Zero, double xpos_alt, double xpos_azi, bool degrees)
-                {
-                    double[][] Histogram = new double[3][];
-                    if (RTData != null)
-                    {
-                        double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
-                        Histogram[0] = new double[hist_temp[0].Length];
-                        Histogram[1] = new double[hist_temp[0].Length];
-                        Histogram[2] = new double[hist_temp[0].Length];
-                        for(int i = 0; i < hist_temp[0].Length; i++)
-                        {
-                            Hare.Geometry.Vector V = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[0][i] - hist_temp[1][i],hist_temp[2][i] - hist_temp[3][i],hist_temp[4][i] - hist_temp[5][i]),xpos_azi, 0, true), 0, xpos_alt, true);
-                            Histogram[0][i] = V.x;
-                            Histogram[1][i] = V.y;
-                            Histogram[2][i] = V.z;
-                        }
-                    }
-                    else
-                    {
-                        Histogram[0] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[1] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                        Histogram[2] = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                    }
+            public static double[] PTCurve_Directional(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
+            {
+                if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
+                if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
 
-                    if (Direct != null && Direct.IsOccluded(Rec_ID))
-                    {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
-                        
-                        double[][] V = Direct.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, true);
-                        for(int i = 0; i < V.Length; i++)
-                        {
-                            Histogram[0][D_Start + i] += V[i][0];
-                            Histogram[1][D_Start + i] += V[i][1];
-                            Histogram[2][D_Start + i] += V[i][2];
-                        }
-                    }
-
-                    if (ISData != null)
-                    {
-                        foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
-                        {
-                            if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram[0].Length - 1)
-                            {
-                                int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
-
-                                double[][] V = value.Dir_Pressure(Rec_ID, xpos_alt, xpos_azi, degrees, Sampling_Frequency);
-                                
-                                Hare.Geometry.Vector dir = value.Path[0][value.Path[0].Length-1] - value.Path[0][value.Path[0].Length - 2];
-                                dir.Normalize();
-                                for (int i = 0; i < value.Pressure.Length; i++)
-                                {
-                                    Histogram[0][R_Start + i] += V[i][0];
-                                    Histogram[1][R_Start + i] += V[i][1];
-                                    Histogram[2][R_Start + i] += V[i][2];
-                                }
-                            }
-                        }
-                    }
-                    return Histogram;
-                }
-
-                public static double[] PTCurve_Directional(IEnumerable<Direct_Sound> Direct, IEnumerable<ImageSourceData> ISData, IEnumerable<Environment.Receiver_Bank> RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, List<int> SrcIDs, bool StartAtZero, double alt, double azi, bool degrees)
-                {
-                    if (Direct == null) Direct = new Direct_Sound[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (ISData == null) ISData = new ImageSourceData[SrcIDs[SrcIDs.Count - 1] + 1];
-                    if (RTData == null) RTData = new Environment.Receiver_Bank[SrcIDs[SrcIDs.Count - 1] + 1];
-
-                    double maxdelay = 0;
+                double maxdelay = 0;
                 List<double> delays = new List<double>();
 
                 if ((Direct as List<Direct_Sound>)[0] != null)
@@ -1447,73 +1447,73 @@ namespace Pachyderm_Acoustic
 
                 maxdelay *= Sampling_Frequency / 1000;
 
-                    double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192 + (int)Math.Ceiling(maxdelay)];
+                double[] Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192 + (int)Math.Ceiling(maxdelay)];
 
-                    foreach (int s in SrcIDs)
+                foreach (int s in SrcIDs)
+                {
+                    double[] IR = PTCurve_Directional((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
+                    //Array.Resize(ref Histogram, Histogram.Length + (int)Math.Ceiling(maxdelay));
+                    //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
+                    for (int i = 0; i < IR.Length; i++)
                     {
-                        double[] IR = PTCurve_Directional((Direct as List<Direct_Sound>)[s], (ISData as List<ImageSourceData>)[s], (RTData as List<Receiver_Bank>)[s], CO_Time_ms, Sampling_Frequency, Octave, Rec_ID, StartAtZero, alt, azi, degrees);
-                        //Array.Resize(ref Histogram, Histogram.Length + (int)Math.Ceiling(maxdelay));
-                        //if (IR.Length > Histogram.Length) Array.Resize(ref Histogram, IR.Length);
-                        for (int i = 0; i < IR.Length; i++)
-                        {
-                            Histogram[i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[i];
-                        }
+                        Histogram[i + (int)Math.Ceiling(delays[s] / 1000 * Sampling_Frequency)] += IR[i];
                     }
-                    return Histogram;
+                }
+                return Histogram;
+            }
+
+            public static double[] PTCurve_Directional(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, bool Start_at_Zero, double alt, double azi, bool degrees)
+            {
+                double[] Histogram;
+                if (RTData != null)
+                {
+                    int[] ids = new int[3];
+                    ids[0] = (azi > 90 && azi < 270) ? 1 : 0;
+                    ids[0] = (azi <= 180) ? 3 : 4;
+                    ids[0] = (alt > 0) ? 4 : 5;
+                    double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
+                    Histogram = new double[hist_temp[0].Length];
+                    for (int i = 0; i < hist_temp[0].Length; i++)
+                    {
+                        Hare.Geometry.Vector V = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[ids[0]][i], hist_temp[ids[1]][i], hist_temp[ids[2]][i]), azi, 0, true), 0, alt, true);
+                        Histogram[i] = V.x;
+                    }
+                }
+                else
+                {
+                    Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
                 }
 
-                public static double[] PTCurve_Directional(Direct_Sound Direct, ImageSourceData ISData, Receiver_Bank RTData, double CO_Time_ms, int Sampling_Frequency, int Octave, int Rec_ID, bool Start_at_Zero, double alt, double azi, bool degrees)
+                if (Direct != null && Direct.IsOccluded(Rec_ID))
                 {
-                    double[] Histogram;
-                    if (RTData != null)
-                    {
-                        int[] ids = new int[3];
-                        ids[0] = (azi > 90 && azi < 270) ? 1 : 0;
-                        ids[0] = (azi <= 180) ? 3 : 4;
-                        ids[0] = (alt > 0) ? 4 : 5;
-                        double[][] hist_temp = RTData.Pressure_3Axis(Rec_ID);
-                        Histogram = new double[hist_temp[0].Length];
-                        for (int i = 0; i < hist_temp[0].Length; i++)
-                        {
-                            Hare.Geometry.Vector V = PachTools.Rotate_Vector(PachTools.Rotate_Vector(new Hare.Geometry.Vector(hist_temp[ids[0]][i], hist_temp[ids[1]][i], hist_temp[ids[2]][i]), azi, 0, true), 0, alt, true);
-                            Histogram[i] = V.x;
-                        }
-                    }
-                    else
-                    {
-                        Histogram = new double[(int)(CO_Time_ms * 0.001 * Sampling_Frequency) + 8192];
-                    }
+                    int D_Start = 0;
+                    if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
 
-                    if (Direct != null && Direct.IsOccluded(Rec_ID))
+                    double[][] V = Direct.Dir_Pressure(Rec_ID, alt, azi, degrees, false);
+                    for (int i = 0; i < V.Length; i++)
                     {
-                        int D_Start = 0;
-                        if (!Start_at_Zero) D_Start = (int)Math.Ceiling(Direct.Time(Rec_ID) * Sampling_Frequency);
-
-                        double[][] V = Direct.Dir_Pressure(Rec_ID, alt, azi, degrees, false);
-                        for (int i = 0; i < V.Length; i++)
-                        {
-                            Histogram[D_Start + i] += V[i][0];
-                        }
+                        Histogram[D_Start + i] += V[i][0];
                     }
+                }
 
-                    if (ISData != null)
+                if (ISData != null)
+                {
+                    foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
                     {
-                        foreach (Deterministic_Reflection value in ISData.Paths[Rec_ID])
+                        if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
                         {
-                            if (Math.Ceiling(Sampling_Frequency * value.TravelTime) < Histogram.Length - 1)
+                            int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
+
+                            double[] V = value.Dir_Pressure(Rec_ID, alt, azi, degrees, false, Sampling_Frequency);
+                            for (int i = 0; i < value.Pressure.Length; i++)
                             {
-                                int R_Start = (int)Math.Ceiling(Sampling_Frequency * value.TravelTime);
-
-                                double[] V = value.Dir_Pressure(Rec_ID, alt, azi, degrees, false, Sampling_Frequency);
-                                for (int i = 0; i < value.Pressure.Length; i++)
-                                {
-                                    Histogram[R_Start + i] += V[i];
-                                }
+                                Histogram[R_Start + i] += V[i];
                             }
                         }
                     }
-                    return Histogram;    
                 }
+                return Histogram;
+            }
 
             ///<summary>
             /// Sabine Reverberation Time : T60 = 0.161V/A
@@ -1547,7 +1547,7 @@ namespace Pachyderm_Acoustic
                     TA = 0;
                     for (int q = 0; q <= Room.Count() - 1; q++)
                     {
-                        TA += (Room.SurfaceArea(q) * (-System.Math.Log(1 - Room.AbsorptionValue[q].Coefficient_A_Broad(t),System.Math.E)));
+                        TA += (Room.SurfaceArea(q) * (-System.Math.Log(1 - Room.AbsorptionValue[q].Coefficient_A_Broad(t), System.Math.E)));
                     }
                     T60[t] = 0.161 * Room.RoomVolume() / (TA + 4 * Room.Attenuation(0)[t] * Room.RoomVolume());
                 }
@@ -1822,11 +1822,11 @@ namespace Pachyderm_Acoustic
                 return 10 * Math.Log10(Sum_Early / Sum_Late);
             }
 
-            public static double[] abs_rt = new double[7]{46, 27, 12, 6.5, 7.5, 8, 12};
+            public static double[] abs_rt = new double[7] { 46, 27, 12, 6.5, 7.5, 8, 12 };
 
             public static double[] Modulation_Transfer_Index(double[][] ETC, double rhoC, double[] Noise, int samplefreq)
             {
-                for (int i = 0; i < 7; i++) if (ETC[i].Length < samplefreq*1.6) Array.Resize<double>(ref ETC[i], (int)(samplefreq * 1.6));
+                for (int i = 0; i < 7; i++) if (ETC[i].Length < samplefreq * 1.6) Array.Resize<double>(ref ETC[i], (int)(samplefreq * 1.6));
 
                 double[] MTI = new double[7];
                 double[] fm = new double[14] { .63, .8, 1.0, 1.25, 1.6, 2.0, 2.5, 3.15, 4.0, 5.0, 6.3, 8.0, 10.0, 12.5 };
@@ -1849,7 +1849,7 @@ namespace Pachyderm_Acoustic
 
                     for (int s = 0; s < etc.Length; s++)
                     {
-                        double t = s/(double)samplefreq;
+                        double t = s / (double)samplefreq;
                         double e = etc[s];
                         sumI += e;
                         for (int mct = 0; mct < 14; mct++)
@@ -1868,32 +1868,32 @@ namespace Pachyderm_Acoustic
                         ICos[mct] *= rhoC;
                     }
 
-                    double Irtk = Math.Pow(10, abs_rt[oct-1]/10) * 1e-12 * rhoC;
+                    double Irtk = Math.Pow(10, abs_rt[oct - 1] / 10) * 1e-12 * rhoC;
                     double amf;
                     double LowerbandL = AcousticalMath.SPL_Intensity(I_LowerBand);
                     if (LowerbandL < 63)
                     {
-                        amf = Math.Pow(10,(0.5 * LowerbandL - 65)/10);
+                        amf = Math.Pow(10, (0.5 * LowerbandL - 65) / 10);
                     }
-                    else if(LowerbandL < 67)
+                    else if (LowerbandL < 67)
                     {
-                        amf = Math.Pow(10,(1.8 * LowerbandL - 146.9)/10);
+                        amf = Math.Pow(10, (1.8 * LowerbandL - 146.9) / 10);
                     }
-                    else if(LowerbandL <100)
+                    else if (LowerbandL < 100)
                     {
-                        amf = Math.Pow(10,(0.5 * LowerbandL - 59.8)/10);
+                        amf = Math.Pow(10, (0.5 * LowerbandL - 59.8) / 10);
                     }
                     else
                     {
-                        amf = Math.Pow(10,-10/10);
+                        amf = Math.Pow(10, -10 / 10);
                     }
-                    
+
                     double Iamk = I_LowerBand * amf;
 
                     for (int mct = 0; mct < 14; mct++)
                     {
                         mk[mct] = Math.Sqrt(ISin[mct] * ISin[mct] + ICos[mct] * ICos[mct]) / sumI;
-                        mk[mct] *= sumI / (sumI + Iamk +Irtk);
+                        mk[mct] *= sumI / (sumI + Iamk + Irtk);
                         double TI = ((10 * Math.Log10(mk[mct] / (1 - mk[mct])) + 15.0) / 30.0);
                         MTI[oct - 1] += TI < 0 ? 0 : TI > 1 ? 1 : TI;
                     }
@@ -1911,7 +1911,7 @@ namespace Pachyderm_Acoustic
 
                 Random r = new Random();
 
-                for (int t = 0; t < etc.Length; t++) 
+                for (int t = 0; t < etc.Length; t++)
                 {
                     double n = r.NextDouble();
                     etc[t] += i * n * n / 413;
@@ -1928,10 +1928,10 @@ namespace Pachyderm_Acoustic
                 double[] alphaMale = new double[7] { 0.085, 0.127, 0.23, 0.233, 0.309, 0.224, 0.173 };
                 double[] alphaFemale = new double[7] { 0, 0.117, 0.223, 0.216, 0.328, 0.25, 0.194 };
                 double[] BetaMale = new double[6] { 0.085, 0.078, 0.065, 0.011, 0.047, 0.095 };
-                double[] BetaFemale = new double[6] { 0, 0.099, 0.066, 0.062, 0.025, 0.076};
+                double[] BetaFemale = new double[6] { 0, 0.099, 0.066, 0.062, 0.025, 0.076 };
 
                 double[] STI = new double[3];
-                for (int oct = 0; oct < 7; oct++) 
+                for (int oct = 0; oct < 7; oct++)
                 {
                     STI[0] += MTI[oct] * alpha2003[oct];
                     STI[1] += MTI[oct] * alphaMale[oct];
@@ -1976,12 +1976,12 @@ namespace Pachyderm_Acoustic
             {
                 double sum_Lateral = 0, sum_Total = 0;
                 int i = (int)Math.Floor(startTime * sample_f);
-                while(i < sample_f * (LowerBound_s + startTime))
+                while (i < sample_f * (LowerBound_s + startTime))
                 {
                     sum_Total += Total_ETC[i];
                     i++;
                 }
-                while(i <= Math.Floor(sample_f * (UpperBound_s + startTime)))
+                while (i <= Math.Floor(sample_f * (UpperBound_s + startTime)))
                 {
                     sum_Lateral += Math.Abs(Lateral_ETC[i]);
                     sum_Total += Total_ETC[i];
@@ -2035,14 +2035,14 @@ namespace Pachyderm_Acoustic
                 if (Speech)
                 {
                     //Speech
-                    EK = new double[]{.9, 1};
+                    EK = new double[] { .9, 1 };
                     dte = 0.009;
-                    n = 2f/3f;
+                    n = 2f / 3f;
                 }
                 else
-                {           
+                {
                     //Music
-                    EK = new double[2]{1.5, 1.8};
+                    EK = new double[2] { 1.5, 1.8 };
                     dte = 0.014;
                     n = 1;
                 }
@@ -2059,18 +2059,18 @@ namespace Pachyderm_Acoustic
 
                 for (int t = (int)(Direct_Time * sample_freq); t < PTC.Length; t++)
                 {
-                    time[t] = time[t-1] + 1 / (double)sample_freq;
+                    time[t] = time[t - 1] + 1 / (double)sample_freq;
                     double Pn = Math.Pow(Math.Abs(PTC[t]), n);
-                    denom[t] = denom[t-1] + Pn;
-                    num[t] = num[t-1] + Pn * time[t];                    
+                    denom[t] = denom[t - 1] + Pn;
+                    num[t] = num[t - 1] + Pn * time[t];
                     ts[t] = num[t] / denom[t];
                 }
-                
+
                 double dEK = (EK[1] - EK[0]) / 40;
 
                 for (int t = (int)(dte * sample_freq); t < PTC.Length; t++)
                 {
-                    EKGrad[t] = (ts[t] - ts[t - (int)(dte*sample_freq)] )/ dte;
+                    EKGrad[t] = (ts[t] - ts[t - (int)(dte * sample_freq)]) / dte;
                     //Linear interpolation of Echo percentage... (for prudence, not to exceed 50.
                     PercentEcho[t] = (EKGrad[t] - EK[0]) * dEK + 10;
                     //PercentEcho[t] = Math.Min(50, Math.Max(10, PercentEcho[t]));
@@ -2221,12 +2221,12 @@ namespace Pachyderm_Acoustic
             /// <returns></returns>
             public static double Center_Time(double[] etc, int sample_f, double Direct_time)
             {
-                double sumPT=0, sumT=0;
+                double sumPT = 0, sumT = 0;
                 double BW = 1 / (double)sample_f;
-                for(int i = 0; i < etc.Length; i++)
+                for (int i = 0; i < etc.Length; i++)
                 {
-                    sumPT += etc[i] * (i*BW - Direct_time);
-                    sumT += etc[i]; 
+                    sumPT += etc[i] * (i * BW - Direct_time);
+                    sumT += etc[i];
                 }
                 return sumPT / sumT;
             }
@@ -2288,7 +2288,7 @@ namespace Pachyderm_Acoustic
                 private static Random _localInstance;
 
                 public RandomNumberGenerator()
-                :base()
+                    : base()
                 {
 
                 }
@@ -2348,14 +2348,14 @@ namespace Pachyderm_Acoustic
                     yaw = Math.PI * alt / 180.0;
                     pitch = Math.PI * azi / 180.0;
                 }
-                else 
+                else
                 {
                     yaw = alt;
                     pitch = azi;
                 }
 
                 ///Implicit Sparse Rotation Matrix
-                double[] r1 = new double[3] { Math.Cos(pitch) * Math.Cos(yaw) , Math.Sin(pitch) * Math.Cos(yaw) , Math.Sin(yaw) };
+                double[] r1 = new double[3] { Math.Cos(pitch) * Math.Cos(yaw), Math.Sin(pitch) * Math.Cos(yaw), Math.Sin(yaw) };
                 Hare.Geometry.Vector fwd = new Hare.Geometry.Vector(r1[0], r1[1], r1[2]);
                 Hare.Geometry.Vector up = new Hare.Geometry.Vector(0, 0, 1) - Hare.Geometry.Hare_math.Dot(new Hare.Geometry.Vector(0, 0, 1), fwd) * fwd;
                 up.Normalize();
@@ -2499,7 +2499,7 @@ namespace Pachyderm_Acoustic
                 int r = (int)(R * 255.0);
                 int g = (int)(G * 255.0);
                 int b = (int)(B * 255.0);
-                return System.Drawing.Color.FromArgb(255, r<0?0:r>255?255:r, g<0?0:g>255?255:g, b<0?0:b>255?255:b);
+                return System.Drawing.Color.FromArgb(255, r < 0 ? 0 : r > 255 ? 255 : r, g < 0 ? 0 : g > 255 ? 255 : g, b < 0 ? 0 : b > 255 ? 255 : b);
             }
 
             /// <summary>
@@ -2679,7 +2679,7 @@ namespace Pachyderm_Acoustic
             //    //Rhino.RhinoDoc.ActiveDoc.Objects.ModifyAttributes(obj, obj.Attributes, true);
             //    return result;
             //}
-            
+
             /// <summary>
             /// Sets materials for an object by layer.
             /// </summary>
@@ -2768,7 +2768,7 @@ namespace Pachyderm_Acoustic
                 if (SWLCodes.Length < 8) return new double[] { 120, 120, 120, 120, 120, 120, 120, 120 };
                 double[] SWL = new double[SWLCodes.Length];
                 for (int i = 0; i < 8; i++)
-                {                                         
+                {
                     SWL[i] = double.Parse(SWLCodes[i]);
                 }
                 return SWL;
@@ -2782,7 +2782,7 @@ namespace Pachyderm_Acoustic
             /// <returns></returns>
             public static Point AddPTPT(Point PT, Point PT2)
             {
-                return new Point(PT.x + PT2.x ,PT.y + PT2.y ,PT.z + PT2.z);
+                return new Point(PT.x + PT2.x, PT.y + PT2.y, PT.z + PT2.z);
             }
 
             /// <summary>
@@ -2873,7 +2873,7 @@ namespace Pachyderm_Acoustic
                     R.Add(new Receiver_Bank(ReceiverLocations, (Srcs as List<Source>)[i].Origin(), Sc, 1000, CutOffTime, (Srcs as List<Source>)[i].Delay, RecType));
                 }
 
-                return R; 
+                return R;
             }
 
             /// <summary>
@@ -3005,7 +3005,7 @@ namespace Pachyderm_Acoustic
             //        System.Drawing.Color color = c_scale.GetValue(Values[i], LBound, UBound);
             //        mesh.VertexColors.SetColor(i, color);
             //    }
-                
+
             //    return Rhino.RhinoDoc.ActiveDoc.Objects.AddMesh(mesh).ToString();
             //}
 
@@ -3058,7 +3058,7 @@ namespace Pachyderm_Acoustic
             //    Rhino.UI.Panels.OpenPanel(new System.Guid("1c48c00e-abd8-40fd-8642-2ce7daa90ed5"));
             //}
 
-            public static class Ray_Acoustics 
+            public static class Ray_Acoustics
             {
                 /// <summary>
                 /// Calculates the direction of a specular reflection.
@@ -3071,7 +3071,7 @@ namespace Pachyderm_Acoustic
                 {
                     Hare.Geometry.Vector local_N = Room.Normal(Face_ID, u, v);
                     R -= local_N * Hare.Geometry.Hare_math.Dot(R, local_N) * 2;
-                }                
+                }
             }
         }
     }
