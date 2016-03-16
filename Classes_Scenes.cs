@@ -435,6 +435,7 @@ namespace Pachyderm_Acoustic
                     base.AbsorptionData.Add(new Basic_Material(Absorption[i], new double[8] { 0, 0, 0, 0, 0, 0, 0, 0 }));
                     base.ScatteringData.Add(new Lambert_Scattering(Scattering[i], 0.25));
                     base.TransmissionData.Add(Transparency[i]);
+                    base.Transmissive.Add(false);
                 }
             }
 
@@ -1863,36 +1864,29 @@ namespace Pachyderm_Acoustic
             //    partition(new List<Hare.Geometry.Point>(P), SP_PARAM);
             //}
 
-            public override void partition(List<Point> P, int SP_PARAM)
-            {
-                Partitioned = true;
-                List<Hare.Geometry.Point> PTS = new List<Hare.Geometry.Point>();
-                foreach (Point PT in P)
-                {
-                    PTS.Add(new Hare.Geometry.Point(PT.x, PT.y, PT.z));
-                }
-                partition(PTS, SP_PARAM);
-            }
-
-            //public override void partition(List<Hare.Geometry.Point> P, int SP_PARAM)
+            //public override void partition(List<Point> P, int SP_PARAM)
             //{
             //    Partitioned = true;
-            //    for (int i = 0; i < Topo.Length; i++)
+            //    List<Hare.Geometry.Point> PTS = new List<Hare.Geometry.Point>();
+            //    foreach (Point PT in P)
             //    {
-            //        Topo[i].Finish_Topology(P);
+            //        PTS.Add(new Hare.Geometry.Point(PT.x, PT.y, PT.z));
             //    }
-
-            //    UI.PachydermAc_PlugIn plugin = UI.PachydermAc_PlugIn.Instance;
-            //    if (plugin.SP_Spec() == 0)
-            //    {
-            //        SP = new Hare.Geometry.Voxel_Grid(Topo, SP_PARAM, 3);
-            //    }
-            //    else if (plugin.SP_Spec() == 1)
-            //    {
-            //        //TODO: implement an Octree...
-            //        throw new NotImplementedException();
-            //    }
+            //    partition(PTS, SP_PARAM);
             //}
+
+            public override void partition(List<Hare.Geometry.Point> P, int SP_PARAM)
+            {
+                Partitioned = true;
+                for (int i = 0; i < Topo.Length; i++)
+                {
+                    Topo[i].Finish_Topology(P);
+                }
+
+                System.IO.File.AppendAllText(@"C:\Users\tyson\git\Dynamo-MeshToolkit\bin\x64\Release\out.txt", "gonna build a voxel grid" );
+
+                SP = new Hare.Geometry.Voxel_Grid(Topo, SP_PARAM, 3);
+            }
 
             //public void partition(List<Hare.Geometry.Point> P)
             //{
