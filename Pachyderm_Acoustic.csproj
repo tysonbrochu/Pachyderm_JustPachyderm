@@ -200,7 +200,7 @@
   -->
   <PropertyGroup>
     <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)$(ProjectName).rhp"
-Copy "$(SolutionDir)Resources\libfftw3-3.dll" "$(TargetDir)"
+Copy "$(ProjectDir)Resources\libfftw3-3.dll" "$(TargetDir)"
 </PostBuildEvent>
     <PreBuildEvent>
     </PreBuildEvent>
