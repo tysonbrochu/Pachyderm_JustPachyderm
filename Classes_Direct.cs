@@ -315,16 +315,16 @@ namespace Pachyderm_Acoustic
             double x1 = 0, x2 = 0;
             double t;
             //List<int> code;
-            int x3 = 0;
+            int polyID = 0;
             Point x4;
             TransMod = new double[8] {1,1,1,1,1,1,1,1};
             while (true)
             {
-                if (Room.shoot(R, out x1, out x2, out x3, out x4, out t))
+                if (Room.shoot(R, out x1, out x2, out polyID, out x4, out t))
                 {
-                    if (Room.IsTransmissive[x3]) 
+                    if (Room.IsTransmissive[polyID]) 
                     {
-                        for(int oct = 0; oct < 8; oct++) TransMod[oct] *= Room.TransmissionValue[x3][oct];
+                        for(int oct = 0; oct < 8; oct++) TransMod[oct] *= Room.TransmissionValue[polyID][oct];
                         continue;
                     }
                     //if (t < dist) RMA.Rhino.RhUtil.RhinoApp().ActiveDoc().AddCurveObject(new RMA.OpenNURBS.OnLineCurve(new RMA.OpenNURBS.OnLineCurve(Receiver.Origin(rec_id), Src.Origin())));
