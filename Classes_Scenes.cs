@@ -424,18 +424,23 @@ namespace Pachyderm_Acoustic
             //public void Plot()
             //{
             //    Utilities.PachTools.Plot_Hare_Topology(Topo[0]);
-            //}
 
             public Polygon_Scene(List<Point[]> Polygons, List<double[]> Absorption, List<double[]> Scattering, List<double[]> Transparency, double Temp, double hr, double Pa, int Air_Choice, bool EdgeCorrection, bool IsAcoustic)
                 :base(Temp, hr, Pa, Air_Choice, EdgeCorrection, IsAcoustic)
             {
                 Topo = new Topology[1] {new Topology(Polygons.ToArray())};
+
+                Topo[0].Plane_Members = new List<int>[Polygons.Count];
+
                 for(int i = 0; i < Polygons.Count; i++)
                 {
                     base.AbsorptionData.Add(new Basic_Material(Absorption[i], new double[8] { 0, 0, 0, 0, 0, 0, 0, 0 }));
                     base.ScatteringData.Add(new Lambert_Scattering(Scattering[i], 0.25));
                     base.TransmissionData.Add(Transparency[i]);
                     base.Transmissive.Add(false);
+
+                    Topo[0].Plane_Members[i] = new List<int>();
+                    Topo[0].Plane_Members[i].Add(i);
                 }
             }
 
@@ -1882,8 +1887,6 @@ namespace Pachyderm_Acoustic
                 {
                     Topo[i].Finish_Topology(P);
                 }
-
-                System.IO.File.AppendAllText(@"C:\Users\tyson\git\Dynamo-MeshToolkit\bin\x64\Release\out.txt", "gonna build a voxel grid" );
 
                 SP = new Hare.Geometry.Voxel_Grid(Topo, SP_PARAM, 3);
             }
